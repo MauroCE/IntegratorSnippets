@@ -98,18 +98,36 @@ class MonitorSingleIntSnippet(Monitor):
         self.ess_mubar = np.exp(2*logsumexp(logw_folded) - logsumexp(2*logw_folded))
 
     def terminate(self) -> bool:
-        """Terminates if the metric is less than or equal to the terminal metric."""
+        """Terminates if the metric is less than or equal to the terminal metric.
+
+        Parameters
+        ----------
+        :return: Whether termination is reached
+        :rtype: bool
+        """
         return self.grab_metric() <= self.terminal_metric
 
 
 class MonitorMixtureIntSnippet:
 
     def __init__(self, *monitors: Monitor):
+        """Monitors progress and computes metrics for an integrator snippets using a mixture of integrators.
+
+        Parameters
+        ----------
+        :param monitors: Monitors for each integrator in the mixture
+        :type monitors: Monitor
+        """
         self.monitors = monitors
 
     def update_metrics(self, attributes: dict):
-        """For each monitor we need to update metrics, but we need the monitor itself to know its position relative
-        to the other monitors."""
+        """Updates metrics for each monitor.
+
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+        """
         for ix in range(len(self.monitors)):
             # for each monitor, we require to pass a dictionary with the following keys
             # N, T, trajectory_indices, indices, particle_indices
@@ -120,6 +138,12 @@ class MonitorMixtureIntSnippet:
                 filtered_attributes[key] = attributes[key][attributes['iotas'] == ix]
             self.monitors[ix].update_metrics(filtered_attributes)
 
-    def terminate(self):
-        """Terminates if any of its sub-monitors terminates."""
+    def terminate(self) -> bool:
+        """Terminates if any of its sub-monitors terminates.
+
+        Parameters
+        ----------
+        :return: Whether termination is reached
+        :rtype: bool
+        """
         return np.any([monitor.terminate() for monitor in self.monitors])
