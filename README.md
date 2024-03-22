@@ -12,9 +12,11 @@ Integrator Snippets are a novel class of algorithms to sample from a target dist
 - `integrators.py`: contains classes to define integrators. Two main classes are available:
   - `Integrator`: this should be used to create a new integrator, which can then be used either as $\psi$ in `SingleIntegratorSnippet` or as one of the integrators in `MixtureIntegratorSnippetSameT`. Two examples are already implemented:
     - `LeapfrogIntegrator`: implements the classic HMC Leapfrog integrator. 
-        ```math
-        \psi(x, v) = 
-        ```
+    
+$$
+\psi(x, v) = 
+$$
+    
     - `AMIntegrator`: implements THUG and SNUG integrators (or a mixture of them).
   - `IntegratorMixtureSameT`: class used to collect together a bunch of integrators, so that they can be passed to `MixtureIntegratorSnippetSameT`. For instance, one may wish to create a THUG integrator and a SNUG integrator and use them jointly.
 - `distributions.py`: contains classes to define target distributions. Currently Filamentary distributions are fully implemented, whereas Tempered distributions are still under development.
