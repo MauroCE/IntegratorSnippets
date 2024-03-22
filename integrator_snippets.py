@@ -15,7 +15,7 @@ from scipy.special import logsumexp
 class AbstractIntegratorSnippet:
 
     def __init__(self):
-        """Abstract class for an integrator snippet. This has nothing to do with Approximate Manifold Sampling."""
+        """Abstract class for an integrator snippet. Provides a common base class for all integrator snippets."""
         self.pos = None
         self.aux = None
         self.n = 1
@@ -57,7 +57,7 @@ class AbstractIntegratorSnippet:
         pass
 
     def sample(self):
-        """Samples using an integrator snippet."""
+        """Samples using an integrator snippet. All extensions discussed in the paper, follow this same structure."""
         self.setup_sampling()
         self.setup_storage()
 
@@ -89,6 +89,29 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
                  seed: Optional[int] = None,
                  verbose: bool = False,
                  plot_every: int = 5):
+        """Initialises the integrator snippet. The integrator snippet is a class that samples from a target distribution
+
+        Parameters
+        ----------
+        :param N: Number of particles
+        :type N: int
+        :param integrator: Integrator used to construct trajectories
+        :type integrator: Integrator
+        :param targets: Sequential targets targeted by the integrator snippet
+        :type targets: SequentialTargets
+        :param monitor: Computes and stores metrics to assess performance and termination of the integrator snippet
+        :type monitor: Monitor
+        :param adaptator: Adapts the parameters of the integrator based on the metrics computed by the monitor
+        :type adaptator: AdaptationStrategy
+        :param max_iter: Maximum number of iterations
+        :type max_iter: int
+        :param seed: Random seed for reproducibility
+        :type seed: int
+        :param verbose: Whether to print information during the sampling, can be used for debugging or monitoring
+        :type verbose: bool
+        :param plot_every: How often to plot the particles, can be used for debugging
+        :type plot_every: int
+        """
         super().__init__()
         self.N = N
         self.T = integrator.T
@@ -113,12 +136,13 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
         self.plot_every = plot_every
 
     def setup_sampling(self):
-        """Samples initial particles."""
+        """Samples initial particles. For more complex variants, this should be overridden."""
         self.pos = self.targets.sample_initial_particles(self.N)
         self.aux = self.integrator.sample_auxiliaries(N=self.N, rng=self.rng)
         self.print("Particles initialised.")
 
     def resample(self):
+        """Resamples N particles out of N(T+1)."""
         self.indices = self.rng.choice(a=self.N*(self.T + 1), size=self.N, replace=True, p=self.W.ravel())
         self.particle_indices, self.trajectory_indices = np.unravel_index(
             self.indices, (self.N, self.T + 1)
@@ -127,44 +151,51 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
         self.print("\tParticles resampled.")
 
     def compute_weights(self):
-        """Computes log weights."""
+        """Computes log weights for each of the N(T+1) particles."""
         self.logw = self.targets.logw(self.pos_nk, self.aux_nk)
         self.W = np.exp(self.logw - logsumexp(self.logw))
         self.logw_folded = - np.log(self.T+1) + logsumexp(self.logw, axis=1)
         self.print("\tWeights computed. Finite: ", np.isfinite(self.W).sum())
 
     def construct_trajectories(self):
+        """Constructs trajectories from each of the N particles by iterating the integrator T times."""
         self.pos_nk, self.aux_nk = self.integrator.integrate(xs=self.pos, vs=self.aux, target=self.targets)
         self.print("\tTrajectories constructed.")
 
     def refresh_auxiliaries(self):
+        """Refreshes any auxiliary variables used by the integrator."""
         self.aux = self.integrator.sample_auxiliaries(N=self.N, rng=self.rng)
         self.print("\tAuxiliaries refreshed.")
 
     def select_next_target(self):
-        """Select the next target using the distribution."""
+        """Select the target for the next iteration, either based on tempering, a fixed sequence or ABC-style."""
         self.targets.update_parameter(self.__dict__)
         self.print("\tNext target selected: ", self.targets.param_new)
 
     def termination_criterion(self):
+        """Checks if the termination conditions are met. Target distributions check if we have reached the final target
+        distribution, whereas the monitor checks if we have reached a terminal metric."""
         self.print("Iteration: ", self.n)
         return (self.n > self.max_iter) or self.targets.terminate() or self.monitor.terminate()
 
     def compute_metrics(self):
-        """Computes metrics based on Monitor."""
+        """Computes metrics based on Monitor. This allows a lot of flexibility from the user or for debugging."""
         self.monitor.update_metrics(self.__dict__)
         self.print("\tMetrics computed.")
 
     def adapt_parameters(self):
+        """Adapts (hyper)parameters of the integrators based on the metrics computed by the monitor."""
         adaptation_dict = self.adaptator.adapt(self.__dict__)
         for (attribute_key, adapted_value) in adaptation_dict.items():
             self.integrator.__dict__[attribute_key] = adapted_value
             self.print("\t" + attribute_key, " adapted to ", adapted_value)
 
     def setup_storage(self):
+        """Should be overridden if we want to store additional variables."""
         pass
 
     def plot_particles(self):
+        """Plots particles at `plot_every` iterations for debugging."""
         if self.n % self.plot_every == 0:
             rc('font', **{'family': 'STIXGeneral'})
             with plt.style.context("dark_background"):
@@ -181,6 +212,7 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
                 plt.show()
 
     def output(self):
+        """Defines the output of the integrator snippet."""
         return {
             'monitor': self.monitor,
             'pos': self.pos,
@@ -200,6 +232,29 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
                  seed: Optional[int] = None,
                  verbose: bool = False,
                  plot_every: int = 5):
+        """
+        Initialises the integrator snippet using a mixture of integrators, where each integrator has the same number of
+        integration steps.
+
+        :param N: Number of particles
+        :type N: int
+        :param int_mixture: Integrators used to construct trajectories
+        :type int_mixture: IntegratorMixtureSameT
+        :param targets: Generator for the sequence of targets
+        :type targets: SequentialTargets
+        :param monitors: Computes and stores metrics to assess performance and termination of the integrator snippet
+        :type monitors: MonitorMixtureIntSnippet
+        :param adaptators: Adapts the parameters of the integrator based on the metrics computed by the monitor
+        :type adaptators: MixtureStepSizeAdaptorSA
+        :param max_iter: Maximum number of iterations
+        :type max_iter: int
+        :param seed: Random seed for reproducibility
+        :type seed: int
+        :param verbose: Whether to print information during the sampling, can be used for debugging or monitoring
+        :type verbose: bool
+        :param plot_every: How often to plot the particles, can be used for debugging
+        :type plot_every: int
+        """
         super().__init__()
         self.N = N
         self.T = int_mixture.T
@@ -231,9 +286,11 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         self.print("Particles initialised.")
 
     def setup_storage(self):
+        """Should be overridden if we want to store additional variables."""
         pass
 
     def termination_criterion(self):
+        """Checks if the termination conditions are met, for each integrator and current target."""
         result = (self.n > self.max_iter) or self.targets.terminate() or self.monitors.terminate()
         if not result:
             self.print("Iteration: ", self.n)
@@ -268,6 +325,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         self.print("\tWeights computed.")
 
     def resample(self):
+        """Resamples N particles out of N(T+1)."""
         self.indices = self.rng.choice(a=self.N*(self.T+1), size=self.N, replace=True, p=self.W.ravel())
         self.particle_indices, self.trajectory_indices = np.unravel_index(
             self.indices, (self.N, self.T+1)
@@ -284,6 +342,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         self.print("\tMetrics computed.")
 
     def adapt_parameters(self):
+        """Adapts parameters of each integrator."""
         adaptation_dicts = self.adaptators.adapt(self.__dict__)
         for ix, adapt_dict in adaptation_dicts.items():
             for (key, adapted_value) in adapt_dict.items():
@@ -292,11 +351,13 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
                            " for integrator ", self.integrators.integrators[ix])
 
     def refresh_auxiliaries(self):
+        """Refreshes auxiliaries of each integrator."""
         self.aux = self.integrators.sample_auxiliaries(N=self.N, iotas=self.iotas, rng=self.rng)
         self.iotas = self.integrators.sample_iotas(N=self.N)
         self.print("\tAuxiliaries and iotas refreshed.")
 
     def plot_particles(self):
+        """Plots particles at `plot_every` iterations for debugging."""
         if self.n % self.plot_every == 0:
             rc('font', **{'family': 'STIXGeneral'})
             with plt.style.context("dark_background"):
@@ -314,6 +375,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
                 plt.show()
 
     def output(self):
+        """Defines the output of the integrator snippet."""
         return {
             'monitor': self.monitors,
             'pos': self.pos,
