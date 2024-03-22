@@ -18,9 +18,24 @@ class Monitor:
         self.median_path_diversity = 1.0
 
     def update_metrics(self, attributes: dict):
-        pass
+        """Updates the metrics based on the attributes of the monitor, which will be in the attributes of the
+         integrator snippet passed.
 
-    def terminate(self):
+         Parameters
+         ----------
+         :param attributes: Dictionary with the attributes of the integrator snippet
+         :type attributes: dict
+         """
+        raise NotImplementedError
+
+    def terminate(self) -> bool:
+        """Returns True if termination is reached, based on the metrics computed.
+
+        Parameters
+        ----------
+        :return: Whether termination is reached
+        :rtype: bool
+        """
         raise NotImplementedError
 
 
