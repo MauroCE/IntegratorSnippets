@@ -2,10 +2,8 @@ import numpy as np
 from integrators import Integrator, IntegratorMixtureSameT
 from distributions import SequentialTargets
 from monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
-import numpy.typing as npt
 from typing import Optional
 from utils import setup_rng
-from scipy.special import logsumexp
 from adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
 import matplotlib.pyplot as plt
 from matplotlib import rc

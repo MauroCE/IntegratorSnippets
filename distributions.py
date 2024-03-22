@@ -29,21 +29,29 @@ class SequentialTargets:
         self.param_old = self.param_new  # new becomes old
         self.param_new = self.generate_parameter(attributes)  # generate new parameter
 
-    def generate_parameter(self, attributes: dict):
+    def generate_parameter(self, attributes: dict) -> float:
         """Generates a new parameter, e.g. a new epsilon or new tempering parameter.
 
         Parameters
         ----------
         :param attributes: Attributes of the integrator snippet
         :type attributes: dict
+        :return: New parameter
+        :rtype: float
         """
         raise NotImplementedError
 
-    def terminate(self):
-        """Checks if the nth parameter is the terminal one."""
+    def terminate(self) -> bool:
+        """Checks if the nth parameter is the terminal one.
+
+        Parameters
+        ----------
+        :return: Whether we have reached the final distribution
+        :rtype: bool
+        """
         raise NotImplementedError
 
-    def logw(self, pos_nk: npt.NDArray[float], aux_nk: npt.NDArray[float]):
+    def logw(self, pos_nk: npt.NDArray[float], aux_nk: npt.NDArray[float]) -> npt.NDArray[float]:
         """Computes log weights for each of the N(T+1) particles.
 
         Parameters
@@ -52,16 +60,20 @@ class SequentialTargets:
         :type pos_nk: np.ndarray
         :param aux_nk: Auxiliary variables of respective particles, has shape (N, T+1, d)
         :type aux_nk: np.ndarray
+        :return Log weights for each of the N(T+1) particles, has shape (N, T+1)
+        :rtype: np.ndarray
         """
         raise NotImplementedError
 
-    def sample_initial_particles(self, N: int):
-        """Samples initial particles to initialise the integrator snippet.
+    def sample_initial_particles(self, N: int) -> npt.NDArray[float]:
+        """Samples initial particles to initialise the integrator snippet. Should be implemented by user.
 
         Parameters
         ----------
         :param N: Number of particles to sample
         :type N: int
+        :return: Initial particles, has shape (N, d)
+        :rtype: np.ndarray
         """
         raise NotImplementedError
 
