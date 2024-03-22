@@ -4,18 +4,38 @@ import numpy as np
 class AdaptationStrategy:
 
     def __init__(self):
+        """Implements adaptation strategies for the parameters of integrators."""
         pass
 
     def adapt(self, attributes: dict) -> dict:
-        pass
+        """Adapts the parameters of the integrator(s).
+
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+        :return: Dictionary with the adapted parameters
+        :rtype: dict
+        """
+        raise NotImplementedError
 
 
 class DummyAdaptation(AdaptationStrategy):
 
-    def __init__(self, *args):
+    def __init__(self):
+        """Dummy adaptation strategy, does nothing, but allows to maintain a simple interface throughout."""
         super().__init__()
 
-    def adapt(self, attributes: dict):
+    def adapt(self, attributes: dict) -> dict:
+        """Does nothing.
+
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+        :return dict: Dictionary with the same step size as before, i.e. does nothing
+        :rtype: dict
+        """
         return {'step_size': attributes['integrator'].__dict__['step_size']}
 
 
