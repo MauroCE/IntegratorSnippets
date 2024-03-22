@@ -87,7 +87,8 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
                  seed: Optional[int] = None,
                  verbose: bool = False,
                  plot_every: int = 5):
-        """Initialises the integrator snippet. The integrator snippet is a class that samples from a target distribution
+        """Initialises the integrator snippet. This class should be used for integrator snippets using a single
+        integrator.
 
         Parameters
         ----------
