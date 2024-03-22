@@ -42,7 +42,15 @@ class Monitor:
 class MonitorSingleIntSnippet(Monitor):
 
     def __init__(self, terminal_metric: float = 1e-2, metric: str = 'pm'):
-        """This is the usual monitor for a single integrator snippet."""
+        """Monitors progress and computes metrics for an integrator snippets using a single integrator.
+
+        Parameters
+        ----------
+        :param terminal_metric: Metric value that determines termination of the integrator snippet
+        :type terminal_metric: float
+        :param metric: Metric to use for termination. Must be one of 'pm', 'mip', 'mpd' or None.
+        :type metric: str
+        """
         super().__init__()
         assert metric in {'pm', 'mip', 'mpd', None}, "Metric must be one of 'pm', 'mip', 'mpd' or None."
         self.terminal_metric = terminal_metric  # could be pm, mid, mpd
@@ -61,14 +69,22 @@ class MonitorSingleIntSnippet(Monitor):
         self.ess_mubar = None
 
     def update_metrics(self, attributes: dict):
-        """Updates the following:
+        """Updates and stores several metrics based on the attributes of the integrator snippets.
 
-        1. Expected Squared Jump Distance
-        2. Proportion of Particles Moved
-        3. Proportion of Particles resampled
-        4. Particle Diversity
-        5. Median Index Proportion
-        6. Median Path Diversity
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+
+        Notes
+        -----
+        Currently updates the following metrics:
+        1. Proportion of Particles Moved
+        2. Proportion of Particles resampled
+        3. Particle Diversity
+        4. Median Index Proportion
+        5. Median Path Diversity
+        6. ESS for mu bar
         """
         N = attributes['N']
         T = attributes['T']
@@ -81,7 +97,8 @@ class MonitorSingleIntSnippet(Monitor):
         logw_folded = logsumexp(attributes['logw'], axis=1) - np.log(T+1)
         self.ess_mubar = np.exp(2*logsumexp(logw_folded) - logsumexp(2*logw_folded))
 
-    def terminate(self):
+    def terminate(self) -> bool:
+        """Terminates if the metric is less than or equal to the terminal metric."""
         return self.grab_metric() <= self.terminal_metric
 
 
