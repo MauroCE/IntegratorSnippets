@@ -43,9 +43,26 @@ class SingleStepSizeAdaptorSA(AdaptationStrategy):
 
     def __init__(self, target_metric_value: float, metric: str = 'pm', lr: float = 0.5, min_step: float = 1e-30,
                  max_step: float = 100.0):
-        """This must be used for an integrator snippet with a single integrator. It adapts only the step size of the
-        integrator and it does so using adaptive monte carlo methods of Andrieu (2008), specifically stochastic
-        approximations."""
+        """Adapts step size of an integrator snippet with a single integrator, using stochastic approximations.
+
+        Parameters
+        ----------
+        :param target_metric_value: Target value for the metric, used for adaptation
+        :type target_metric_value: float
+        :param metric: Metric to use for adaptation. Must be one of 'pm', 'mip', or 'mpd'.
+        :type metric: str
+        :param lr: Learning rate for the adaptation
+        :type lr: float
+        :param min_step: Minimum step size allowed
+        :type min_step: float
+        :param max_step: Maximum step size allowed
+        :type max_step: float
+
+        Notes
+        -----
+        It adapts only the step size of the integrator and it does so using adaptive monte carlo methods of
+        Andrieu (2008), specifically stochastic approximations.
+        """
         super().__init__()
         assert metric in {'pm', 'mip', 'mpd'}, "Metric must be one of 'pm', 'mip', or 'mpd'."
         self.lr = lr
@@ -59,8 +76,16 @@ class SingleStepSizeAdaptorSA(AdaptationStrategy):
         else:
             self.metric_key = "median_path_diversity"
 
-    def adapt(self, attributes: dict):
-        """Performs adaptation."""
+    def adapt(self, attributes: dict) -> dict:
+        """Performs adaptation on the step size.
+
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+        :return: Dictionary with the adapted step size
+        :rtype: dict
+        """
         log_step = np.log(attributes['integrator'].__dict__['step_size'])
         metric_value = attributes['monitor'].__dict__[self.metric_key]
         return {
