@@ -8,15 +8,35 @@ import scipy as sp
 class SequentialTargets:
 
     def __init__(self, param_init: float):
+        """Abstract class for sequential targets. This is the base class for Filamentary and Tempered distributions.
+
+        Parameters
+        ----------
+        :param param_init: Initial parameter for the initial distribution
+        :type param_init: float
+        """
         self.param_old = param_init
         self.param_new = param_init
 
     def update_parameter(self, attributes: dict):
+        """Sets the old parameter to the current one, and updates the current one.
+
+        Parameters
+        ----------
+        :param attributes: Attributes of the integrator snippet
+        :type attributes: dict
+        """
         self.param_old = self.param_new  # new becomes old
         self.param_new = self.generate_parameter(attributes)  # generate new parameter
 
     def generate_parameter(self, attributes: dict):
-        """Generates either new epsilon or new tempering parameter."""
+        """Generates a new parameter, e.g. a new epsilon or new tempering parameter.
+
+        Parameters
+        ----------
+        :param attributes: Attributes of the integrator snippet
+        :type attributes: dict
+        """
         raise NotImplementedError
 
     def terminate(self):
@@ -24,10 +44,25 @@ class SequentialTargets:
         raise NotImplementedError
 
     def logw(self, pos_nk: npt.NDArray[float], aux_nk: npt.NDArray[float]):
-        """pos_nk (N, T+1, d) and aux_nk (N, T+1, d)."""
+        """Computes log weights for each of the N(T+1) particles.
+
+        Parameters
+        ----------
+        :param pos_nk: Positions of the particles, has shape (N, T+1, d)
+        :type pos_nk: np.ndarray
+        :param aux_nk: Auxiliary variables of respective particles, has shape (N, T+1, d)
+        :type aux_nk: np.ndarray
+        """
         raise NotImplementedError
 
     def sample_initial_particles(self, N: int):
+        """Samples initial particles to initialise the integrator snippet.
+
+        Parameters
+        ----------
+        :param N: Number of particles to sample
+        :type N: int
+        """
         raise NotImplementedError
 
 
