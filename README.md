@@ -29,10 +29,13 @@ where $\pi(dx)$ is a distribution on $(\mathbb{R}^d, \mathcal{B}(\mathbb{R}^d))$
 Tempered distributions are still under development.
 
 ---
+
 ### `monitoring.py`
 Classes to monitor the performance and track the execution/termination of integrator snippets. 
 Computes metrics such as the proportion of particles moved, the median index proportion and many others. It has been built to be very flexible.
+
 ---
+
 ### `adaptation.py`
 Classes to adapt parameters of integrators (both single and mixtures of integrators).
 
