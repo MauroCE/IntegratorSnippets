@@ -80,7 +80,21 @@ class LeapfrogIntegrator(Integrator):
 
     def __init__(self, d: int, T: int, step_size: float, dVdq: callable,
                  mass_matrix: Optional[npt.NDArray[float]] = None):
-        """Leapfrog Integrator with constant mass matrix."""
+        """Classic Leapfrog Integrator used to integrate Hamilton's equations, with constant mass matrix.
+
+        Parameters
+        ----------
+        :param d: Dimensionality of the position space
+        :type d: int
+        :param T: Number of leapfrog steps
+        :type T: int
+        :param step_size: Step size of the integrator
+        :type step_size: float
+        :param dVdq: Gradient of the potential, must take arrays (N, d) as input
+        :type dVdq: callable
+        :param mass_matrix: Mass matrix of the system, defaults to identity
+        :type mass_matrix: np.ndarray
+        """
         super().__init__(x_dim=d, v_dim=d, T=T)
         self.step_size = step_size
         self.mass_matrix = mass_matrix if mass_matrix is not None else np.eye(self.x_dim)
@@ -94,12 +108,31 @@ class LeapfrogIntegrator(Integrator):
             self.v_transform = lambda vs: cho_solve((self.chol_mass, True), vs.T).T
 
     def update_params(self, **kwargs):
-        """Should update step size and T."""
+        """Updates step size and number of integrator steps.
+
+        Parameters
+        ----------
+        :param kwargs: Dictionary of attributes to update
+        :type kwargs: dict
+        """
         for (key, value) in kwargs.items():
             self.__setattr__(key, value)
 
-    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: SequentialTargets):
-        """Integrates using the Leapfrog Integrator."""
+    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: SequentialTargets) \
+            -> tuple[npt.NDArray[float], npt.NDArray[float]]:
+        """Integrates using the Leapfrog Integrator.
+
+        Parameters
+        ----------
+        :param xs: (N, d) array of positions
+        :type xs: np.ndarray
+        :param vs: (N, d) array of velocities
+        :type vs: np.ndarray
+        :param target: Target distribution
+        :type target: SequentialTargets
+        :return: Tuple of arrays (positions, velocities) of shape (N, T+1, d) and (N, T+1, d)
+        :rtype: tuple
+        """
         N = xs.shape[0]
         pos = np.zeros((N, self.T+1, self.x_dim))  # trajectories
         aux = np.zeros((N, self.T+1, self.x_dim))
@@ -124,15 +157,34 @@ class LeapfrogIntegrator(Integrator):
         vs = vs - 0.5 * self.step_size * self.dVdq(xs, target.param_new)
         # store
         pos[:, self.T] = xs
-        aux[:, self.T] = -vs  # TODO: do I need to flip the velocity?
+        aux[:, self.T] = -vs  # flip the sign of the velocities
         return pos, aux
 
-    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None):
+    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None) -> npt.NDArray[float]:
+        """Samples auxiliary variables from the standard normal distribution.
+
+        Parameters
+        ----------
+        :param N: Number of samples to draw
+        :type N: int
+        :param rng: Random number generator for reproducibility
+        :type rng: np.random.Generator
+        :return: Sampled auxiliary variables of shape (N, d)
+        :rtype: np.ndarray
+        """
         self.rng = rng if rng is not None else self.rng
         return self.chol_mass.dot(self.rng.normal(loc=0.0, scale=1.0, size=(self.v_dim, N))).T
 
-    def eval_aux_logdens(self, vs: npt.NDArray[any]):
-        # cho_solve((self.chol_mass, True), vs.T))
+    def eval_aux_logdens(self, vs: npt.NDArray[any]) -> npt.NDArray[float]:
+        """Evaluates the log density of the auxiliary variables.
+
+        Parameters
+        ----------
+        :param vs: Auxiliary variables at which we evaluate the log density, has shape (N, d)
+        :type vs: np.ndarray
+        :return: Log density of the auxiliary variables of shape (N, )
+        :type: np.ndarray
+        """
         return self.aux_nc - 0.5*np.einsum('ij,ji->i', vs, self.v_transform(vs).T)
 
 
