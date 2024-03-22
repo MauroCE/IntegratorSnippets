@@ -9,25 +9,70 @@ from utils import project
 class Integrator:
 
     def __init__(self, x_dim: int, v_dim: int, T: int):
-        """Abstract integrator class."""
+        """Abstract integrator class.
+
+        Parameters
+        ----------
+        :param x_dim: Dimensionality of the position space, the actual variable of interest
+        :type x_dim: int
+        :param v_dim: Dimensionality of the auxiliary space, the variables that help us move in the position space
+        :type v_dim: int
+        """
         self.x_dim = x_dim  # dimension of position variable
         self.v_dim = v_dim  # dimension of auxiliary variables
         self.T = T  # number of integration steps
 
-    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: SequentialTargets):
-        """Creates trajectories. Expects xs of shape (N, x_dim) and vs of shape (N, v_dim)."""
+    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: SequentialTargets) \
+            -> tuple[npt.NDArray[float], npt.NDArray[float]]:
+        """Creates trajectories.
+
+        Parameters
+        ----------
+        :param xs: (N, x_dim) array of positions
+        :type xs: np.ndarray
+        :param vs: (N, v_dim) array of auxiliary variables
+        :type vs: np.ndarray
+        :param target: Target distribution
+        :type target: SequentialTargets
+        :return: Tuple of arrays (positions, velocities) of shape (N, T+1, x_dim) and (N, T+1, v_dim)
+        :rtype: tuple
+        """
         raise NotImplementedError("integrate method not implemented.")
 
-    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None):
-        """Samples auxiliary variables. Returns array of shape (N, v_dim)."""
+    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None) -> npt.NDArray[any]:
+        """Samples auxiliary variables used by the integrator.
+
+        Parameters
+        ----------
+        :param N: Number of particles, and thus of samples to be drawn
+        :type N: int
+        :param rng: Random number generator for reproducibility
+        :rtype rng: np.random.Generator
+        :return: Sampled auxiliary variables of shape (N, v_dim)
+        :rtype: np.ndarray
+        """
         raise NotImplementedError("sample_auxiliaries method not implemented.")
 
-    def eval_aux_logdens(self, vs: npt.NDArray[any]):
-        """Evaluates the log of the density of the auxiliary variables. Expects vs of shape (N, v_dim)."""
+    def eval_aux_logdens(self, vs: npt.NDArray[any]) -> npt.NDArray[float]:
+        """Evaluates the log of the density of the auxiliary variables.
+
+        Parameters
+        ----------
+        :param vs: Auxiliary variables at which we evaluate the log density, has shape (N, v_dim)
+        :type vs: np.ndarray
+        :return: Log density of the auxiliary variables of shape (N, )
+        :rtype: np.ndarray
+        """
         raise NotImplementedError("eval_logdens method not implemented.")
 
     def update_params(self, **kwargs):
-        """Updates attributes based on Stochastic Approximation of IntegratorSnippets."""
+        """Updates attributes based on Stochastic Approximation of IntegratorSnippets.
+
+        Parameters
+        ----------
+        :param kwargs: Dictionary of attributes to update
+        :type kwargs: dict
+        """
         raise NotImplementedError("update_params method not implemented.")
 
 
