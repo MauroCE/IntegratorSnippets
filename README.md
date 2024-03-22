@@ -5,8 +5,8 @@ Integrator Snippets are a novel class of algorithms to sample from a target dist
 
 ### Repo Structure
 
-- `integrator_snippets.py` contains the main code implementing the actual integrator snippet algorithms. Two variants are currently available:
-    - `SingleIntegratorSnippet` uses a single integrator $\psi$.
+- `integrator_snippets.py`: Classes for **unfolded** integrator snippets.
+    - `SingleIntegratorSnippet`: trajectories are constructed with a single integrator $\psi:\mathsf{Z}\to\mathsf{Z}$.
     - `MixtureIntegratorSnippetSameT`: allows the user to specify a finite number of integrators, all with the same number of integration steps (but possibly different step sizes). 
 
 - `integrators.py`: contains classes to define integrators. Two main classes are available:
