@@ -275,6 +275,15 @@ class AMIntegrator(Integrator):
 class IntegratorMixtureSameT:
 
     def __init__(self, *integrators: Integrator, mixture_probabilities: npt.NDArray[float]):
+        """Mixture of integrators with the same number of integration steps.
+
+        Parameters
+        ----------
+        :param integrators: Integrators used by the integrator snippet
+        :type integrators: Integrator
+        :param mixture_probabilities: Mixture probabilities for each integrator. Must sum up to one
+        :type mixture_probabilities: np.ndarray
+        """
         assert len(integrators) == len(mixture_probabilities), "There must be one mixture weight for each integrator."
         assert np.sum(mixture_probabilities) == 1.0, "Mixture probabilities must sum to one."
         assert (mixture_probabilities >= 0).all(), "Mixture weights must all be non-negative"
@@ -288,11 +297,36 @@ class IntegratorMixtureSameT:
         self.pos_dim = self.integrators[0].x_dim
         self.aux_dim = self.integrators[0].v_dim
 
-    def sample_iotas(self, N: int):
+    def sample_iotas(self, N: int) -> npt.NDArray[float]:
+        """Samples the iota variables that determines which integrator to be used for each particle.
+
+        Parameters
+        ----------
+        :param N: Number of particles
+        :type N: int
+        :return: Sampled iotas of shape (N, )
+        :rtype: np.ndarray
+        """
         return self.rng.choice(a=self.n_int, size=N, replace=True, p=self.mixture_probabilities)
 
     def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[float], iotas: npt.NDArray[float],
-                  target: SequentialTargets):
+                  target: SequentialTargets)\
+            -> tuple[npt.NDArray[float], npt.NDArray[float]]:
+        """Integrates particles using the respective integrators.
+
+        Parameters
+        ----------
+        :param xs: (N, d) array of positions
+        :type xs: np.ndarray
+        :param vs: (N, d) array of velocities
+        :type vs: np.ndarray
+        :param iotas: (N, ) array of flags that determine which integrator to use
+        :type iotas: np.ndarray
+        :param target: Target distribution
+        :type target: SequentialTargets
+        :return: Tuple of arrays (positions, velocities) of shape (N, T+1, d) and (N, T+1, d)
+        :rtype: tuple
+        """
         # sample to choose which particles will be integrated with which integrator
         N = xs.shape[0]
         # integrate the respective particles, create a total trajectory
@@ -304,14 +338,39 @@ class IntegratorMixtureSameT:
             aux[iotas == i] = a
         return pos, aux
 
-    def sample_auxiliaries(self, N: int, iotas: npt.NDArray[float], rng: Optional[np.random.Generator] = None):
+    def sample_auxiliaries(self, N: int, iotas: npt.NDArray[float], rng: Optional[np.random.Generator] = None)\
+            -> npt.NDArray[float]:
+        """Samples auxiliary variables for each integrator.
+
+        Parameters
+        ----------
+        :param N: Number of particles
+        :type N: int
+        :param iotas: (N, ) array of flags that determine which integrator was used for each particle
+        :type iotas: np.ndarray
+        :param rng: Random number generator for reproducibility
+        :type rng: np.random.Generator
+        :return: Sampled auxiliary variables of shape (N, d)
+        :rtype: np.ndarray
+        """
         self.rng = rng if rng is not None else self.rng
         aux = np.zeros((N, self.aux_dim))
         for i in range(self.n_int):
             aux[iotas == i] = self.integrators[i].sample_auxiliaries(N=np.sum(iotas == i), rng=rng)
         return aux
 
-    def eval_aux_logdens(self, vs: npt.NDArray[any], iotas: npt.NDArray[float]):
+    def eval_aux_logdens(self, vs: npt.NDArray[any], iotas: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Evaluates the log density of the auxiliary variables.
+
+        Parameters
+        ----------
+        :param vs: Auxiliary variables at which we evaluate the log density, has shape (N, d)
+        :type vs: np.ndarray
+        :param iotas: (N, ) array of flags that determine which integrator was used for each particle
+        :type iotas: np.ndarray
+        :return: Log density of the auxiliary variables of shape (N, )
+        :rtype: np.ndarray
+        """
         vals = np.zeros(len(vs))
         for i in range(self.n_int):
             vals[iotas == i] = self.integrators[i].eval_aux_logdens(vs=vs[iotas == i])
