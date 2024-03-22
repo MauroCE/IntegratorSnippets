@@ -70,8 +70,31 @@ class Filamentary(SequentialTargets):
 
     def __init__(self, manifold: Manifold, eps: float, kernel: str = 'uniform', eps_ter: float = 1e-16, qv: float = 0.8,
                  coeff: float = 1.0):
-        """This implements $\\mu_n = \\pi_n \\otimes \\varpi_n$ where we assume that $\\varpi_n$ is fixed and does not
-         change with n, and we assume $\\pi_n$ is a filamentary distribution on $(X, \\mathcal{X})$. """
+        """Filamentary distributions concentrated around a lower-dimensional manifold.
+
+        Parameters
+        ----------
+        :param manifold: Manifold around which the distribution is concentrated
+        :type manifold: Manifold
+        :param eps: Initial tolerance for the kernel, typically will be computed as maximum distance of the initial
+        particles from the manifold
+        :type eps: float
+        :param kernel: Type of kernel to use, either 'uniform' or 'normal'
+        :type kernel: str
+        :param eps_ter: Terminal tolerance for the kernel
+        :type eps_ter: float
+        :param qv: The next tolerance will be set to the `qv` quantile of the distances of the particles from the
+        manifold
+        :type qv: float
+        :param coeff: Coefficient to multiply the current tolerance by to get the new tolerance, should be used with
+        a normal kernel to avoid the sequence of distributions getting stuck
+        :type coeff: float
+
+        Notes
+        -----
+        This implements $\\mu_n = \\pi_n \\otimes \\varpi_n$ where we assume that $\\varpi_n$ is fixed and does not
+         change with n, and we assume $\\pi_n$ is a filamentary distribution on $(X, \\mathcal{X})$.
+        """
         super().__init__(param_init=eps)
         assert kernel in {'uniform', 'normal'}, "Kernel must be either 'uniform' or 'normal'."
         self.kernel_type = kernel
@@ -81,9 +104,16 @@ class Filamentary(SequentialTargets):
         self.qv = qv
         self.coeff = 1.0 if kernel == 'uniform' else coeff
 
-    def generate_parameter(self, attributes: dict):
+    def generate_parameter(self, attributes: dict) -> float:
         """Generates the new tolerance using automatic tolerance selection strategy.
-        Assume that we don't need `vs` to generate the new parameter."""
+
+        Parameters
+        ----------
+        :param attributes: Attributes of the integrator snippet
+        :type attributes: dict
+        :return: New tolerance parameter
+        :rtype: float
+        """
         return max(
             min(
                 float(self.coeff * self.param_old),
@@ -92,23 +122,52 @@ class Filamentary(SequentialTargets):
             self.eps_ter
         )
 
-    def terminate(self):
-        """Simply checks if a certain epsilon is <= the terminal epsilon."""
+    def terminate(self) -> bool:
+        """Simply checks if a certain epsilon is <= the terminal epsilon.
+
+        Parameters
+        ---------
+        :return: Whether we have reached the final filamentary distribution
+        :rtype: bool
+        """
         return self.eps_ter > self.param_old or abs(self.param_old - self.eps_ter) <= 1e-10  # param would be epsilon
 
     def base_log_dens_x(self, xnk_flattened: npt.NDArray[float]) -> npt.NDArray[float]:
         """Unconstrained density on the marginal space $(X, \\mathcal{X})$.
-        Expects an array of shape (N*(T+1), d). It does NOT expect one of shape (N, T+1, d). This is because it allows
-        for simpler coding interface. Return array of shape (N*(T+1), )."""
+
+        Parameters
+        ----------
+        :param xnk_flattened: Flattened array of positions, has shape (N*(T+1), d)
+        :type xnk_flattened: np.ndarray
+        :return: Log density evaluated at each row of xnk_flattened, has shape (N*(T+1), )
+        :rtype: np.ndarray
+        """
         raise NotImplementedError
 
-    def log_dens_aux(self, vnk_flattened: npt.NDArray[float]):
-        """Computes log density for auxiliary variables (assumed not to vary for n). Expects input to be an array of
-        shape (N*(T+1), d) and returns an array of shape (N*(T+1), )."""
+    def log_dens_aux(self, vnk_flattened: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Computes log density for auxiliary variables (assumed not to vary for n).
+
+        Parameters
+        ----------
+        :param vnk_flattened: Flattened array of auxiliary variables, has shape (N*(T+1), d)
+        :type vnk_flattened: np.ndarray
+        :return: Should return the log density for the auxiliary variables of shape (N*(T+1), )
+        :rtype: np.ndarray
+        """
         raise NotImplementedError
 
-    def logw(self, pos_nk: npt.NDArray[float], aux_nk: npt.NDArray[float]):
-        """Computes log weights for znk = [xnk, vnk]. Here we DO expect shape (N, T+1, d) for each array."""
+    def logw(self, pos_nk: npt.NDArray[float], aux_nk: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Computes log weights.
+
+        Parameters
+        ----------
+        :param pos_nk: Positions of the particles, has shape (N, T+1, d)
+        :type pos_nk: np.ndarray
+        :param aux_nk: Auxiliary variables of respective particles, has shape (N, T+1, d)
+        :type aux_nk: np.ndarray
+        :return: Log weights for each of the N(T+1) particles, has shape (N, T+1)
+        :rtype: np.ndarray
+        """
         N, Tp1, d = pos_nk.shape  # (N, T+1, d)
         # Log-denominator for the un-normalised weights with shape (N, 1)
         log_den = self.base_log_dens_x(pos_nk[:, 0]) + self.log_kernel(self.manifold.f(pos_nk[:, 0]), self.param_old)
