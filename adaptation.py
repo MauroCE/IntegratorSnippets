@@ -99,9 +99,25 @@ class SingleStepSizeAdaptorSA(AdaptationStrategy):
 class MixtureStepSizeAdaptorSA:
 
     def __init__(self, *adaptors: AdaptationStrategy):
+        """Adapts the step size of a mixture of integrators using stochastic approximations.
+
+        Parameters
+        ----------
+        :param adaptors: Adaptors for the individual integrators
+        :type adaptors: AdaptationStrategy
+        """
         self.adaptors = adaptors
 
     def adapt(self, attributes: dict):
+        """Adapts the step size of each integrator.
+
+        Parameters
+        ----------
+        :param attributes: Dictionary with the attributes of the integrator snippet
+        :type attributes: dict
+        :return: Dictionary with the adapted step sizes, for each integrator
+        :rtype: dict
+        """
         adaptation_dict = {ix: {} for ix in range(len(self.adaptors))}
         for ix in range(len(self.adaptors)):
             # creates a dict that contains 'integrator' and 'monitor'
