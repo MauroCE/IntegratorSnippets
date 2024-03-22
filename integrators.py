@@ -191,7 +191,19 @@ class LeapfrogIntegrator(Integrator):
 class AMIntegrator(Integrator):
 
     def __init__(self, d: int, T: int, step_size: float, int_type: str = 'thug'):
-        """Represents both THUG or SNUG integrator."""
+        """Represents both THUG or SNUG integrator.
+
+        Parameters
+        ----------
+        :param d: Dimensionality of the position space
+        :type d: int
+        :param T: Number of integration steps or equivalently number of bounces
+        :type T: int
+        :param step_size: Step size of the integrator
+        :type step_size: float
+        :param int_type: Type of integrator, either 'thug' or 'snug'
+        :type int_type: str
+        """
         assert int_type in ['thug', 'snug'], "Type must be either 'thug' or 'snug'."
         super().__init__(x_dim=d, v_dim=d, T=T)
         self.step_size = step_size
@@ -200,10 +212,25 @@ class AMIntegrator(Integrator):
         self.sign = 1.0 if self.int_type == 'thug' else -1.0
 
     def __repr__(self):
+        """Pretty print for debugging."""
         name = "THUG" if self.int_type == 'thug' else "SNUG"
         return f"{name} Integrator with T={self.T} and step size={self.step_size}."
 
-    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: Filamentary):
+    def integrate(self, xs: npt.NDArray[float], vs: npt.NDArray[any], target: Filamentary) \
+            -> tuple[npt.NDArray[float], npt.NDArray[float]]:
+        """Constructs trajectories using either the THUG or SNUG integrator.
+
+        Parameters
+        ----------
+        :param xs: (N, d) array of positions
+        :type xs: np.ndarray
+        :param vs: (N, d) array of velocities
+        :type vs: np.ndarray
+        :param target: Target distribution
+        :type target: Filamentary
+        :return: Tuple of arrays (positions, velocities) of shape (N, T+1, d) and (N, T+1, d)
+        :rtype: tuple
+        """
         N = xs.shape[0]
         pos = np.zeros((N, self.T+1, self.x_dim))
         aux = np.zeros((N, self.T+1, self.v_dim))
@@ -217,11 +244,31 @@ class AMIntegrator(Integrator):
             aux[:, t+1] = vs
         return pos, aux
 
-    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None):
+    def sample_auxiliaries(self, N: int, rng: Optional[np.random.Generator] = None) -> npt.NDArray[float]:
+        """Samples auxiliary variables from the standard normal distribution.
+
+        Parameters
+        ----------
+        :param N: Number of samples to draw
+        :type N: int
+        :param rng: Random number generator for reproducibility
+        :type rng: np.random.Generator
+        :return: Sampled auxiliary variables of shape (N, d)
+        :rtype: np.ndarray
+        """
         self.rng = rng if rng is not None else self.rng
         return rng.normal(loc=0.0, scale=1.0, size=(N, self.v_dim))
 
-    def eval_aux_logdens(self, vs: npt.NDArray[any]):
+    def eval_aux_logdens(self, vs: npt.NDArray[any]) -> npt.NDArray[float]:
+        """Evaluate the log density of the auxiliary variables.
+
+        Parameters
+        ----------
+        :param vs: Auxiliary variables at which we evaluate the log density, has shape (N, d)
+        :type vs: np.ndarray
+        :return: Log density of the auxiliary variables of shape (N, )
+        :rtype: np.ndarray
+        """
         return -0.5*(np.linalg.norm(vs, axis=1)**2)
 
 
