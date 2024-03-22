@@ -1,3 +1,5 @@
+![Integrator Snippets](integrator_snippets.png)
+
 # Integrator Snippets
 Integrator Snippets are a novel class of algorithms to sample from a target distribution.
 
