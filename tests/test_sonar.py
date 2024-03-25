@@ -1,13 +1,10 @@
 import numpy as np
-from integrators import LeapfrogIntegrator
 from scipy.stats import multivariate_normal as mvn
-from distributions import Tempered
-from monitoring import MonitorSingleIntSnippet
-from adaptation import DummyAdaptation
-from integrator_snippets import SingleIntegratorSnippet
-from utils import essl
-from pathlib import Path
-import numpy as np
+from integrator_snippets.integrators import LeapfrogIntegrator
+from integrator_snippets.distributions import Tempered
+from integrator_snippets.monitoring import MonitorSingleIntSnippet
+from integrator_snippets.adaptation import DummyAdaptation
+from integrator_snippets.samplers import SingleIntegratorSnippet
 
 
 def get_sonar_data():
