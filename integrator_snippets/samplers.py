@@ -235,6 +235,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
     def __init__(self, N: int, int_mixture: IntegratorMixtureSameT, targets: SequentialTargets,
                  monitors: MonitorMixtureIntSnippet,
                  adaptators: MixtureStepSizeAdaptorSA,
+                 mixture_weights: MixtureWeights = UniformMixtureWeights(T=2),
                  max_iter: int = 1000,
                  seed: Optional[int] = None,
                  verbose: bool = False,
@@ -284,6 +285,9 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         self.verbose = verbose
         self.print = print if self.verbose else lambda *a, **k: None
         self.plot_every = plot_every
+        # setup mixture weights
+        self.mixture_weights = mixture_weights
+        self.mixture_weights.T = self.T
 
     def setup_sampling(self):
         """Samples initial particles."""
@@ -327,7 +331,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
 
     def compute_weights(self):
         """Computes log weights."""
-        self.logw = self.targets.logw(self.pos_nk, self.aux_nk)
+        self.logw = self.targets.logw(self.pos_nk, self.aux_nk) + self.mixture_weights.log_weights()
         self.W = np.exp(self.logw - logsumexp(self.logw))
         self.print("\tWeights computed.")
 

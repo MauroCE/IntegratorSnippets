@@ -5,6 +5,7 @@ from integrator_snippets.integrators import AMIntegrator, IntegratorMixtureSameT
 from integrator_snippets.monitoring import MonitorMixtureIntSnippet, MonitorSingleIntSnippet
 from integrator_snippets.adaptation import DummyAdaptation, MixtureStepSizeAdaptorSA, SingleStepSizeAdaptorSA
 from integrator_snippets.samplers import MixtureIntegratorSnippetSameT, SingleIntegratorSnippet
+from integrator_snippets.mixture_weights import UniformMixtureWeights
 from integrator_snippets.utils import grad_neg_normal_log_kernel
 import numpy.typing as npt
 
@@ -45,9 +46,13 @@ if __name__ == "__main__":
                                              max_step=10., min_step=0.000001, lr=0.5)
     adaptators = MixtureStepSizeAdaptorSA(thug_adaptator, snug_adaptator)
 
+    # Mixture weights
+    mix_weights = UniformMixtureWeights(T=T)
+
     # Integrator Snippet
     ghums = MixtureIntegratorSnippetSameT(N=N, int_mixture=integrators, targets=targets, monitors=monitors,
-                                          adaptators=adaptators, max_iter=5000, verbose=True, plot_every=100)
+                                          adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
+                                          verbose=True, plot_every=100)
     out = ghums.sample()
 
     # Try the same but with HMC
