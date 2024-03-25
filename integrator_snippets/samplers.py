@@ -8,6 +8,7 @@ from .distributions import SequentialTargets
 from .integrators import Integrator, IntegratorMixtureSameT
 from .monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
 from .adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
+from .mixture_weights import MixtureWeights, UniformMixtureWeights
 
 
 class AbstractIntegratorSnippet:
@@ -83,6 +84,7 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
     def __init__(self, N: int, integrator: Integrator, targets: SequentialTargets,
                  monitor: Monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm'),
                  adaptator: AdaptationStrategy = SingleStepSizeAdaptorSA(target_metric_value=0.3, metric='mip'),
+                 mixture_weights: MixtureWeights = UniformMixtureWeights(T=2),
                  max_iter: int = 1000,
                  seed: Optional[int] = None,
                  verbose: bool = False,
@@ -133,6 +135,9 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
         self.verbose = verbose
         self.print = print if self.verbose else lambda *a, **k: None
         self.plot_every = plot_every
+        # Update mixture weights T, to allow for a sensible initialization
+        self.mixture_weights = mixture_weights
+        self.mixture_weights.T = self.T
 
     def setup_sampling(self):
         """Samples initial particles. For more complex variants, this should be overridden."""
@@ -151,7 +156,7 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
 
     def compute_weights(self):
         """Computes log weights for each of the N(T+1) particles."""
-        self.logw = self.targets.logw(self.pos_nk, self.aux_nk)
+        self.logw = self.targets.logw(self.pos_nk, self.aux_nk) + self.mixture_weights.log_weights()
         self.W = np.exp(self.logw - logsumexp(self.logw))
         self.logw_folded = - np.log(self.T+1) + logsumexp(self.logw, axis=1)
         self.print("\tWeights computed. Finite: ", np.isfinite(self.W).sum())
@@ -188,6 +193,9 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
         for (attribute_key, adapted_value) in adaptation_dict.items():
             self.integrator.__dict__[attribute_key] = adapted_value
             self.print("\t" + attribute_key, " adapted to ", adapted_value)
+        # Update mixture weights' T
+        self.T = self.integrator.T
+        self.mixture_weights.T = self.T
 
     def setup_storage(self):
         """Should be overridden if we want to store additional variables."""
