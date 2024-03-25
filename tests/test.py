@@ -1,11 +1,11 @@
 import numpy as np
-from manifolds import Ellipsoid
-from distributions import Filamentary
-from integrators import AMIntegrator, IntegratorMixtureSameT, LeapfrogIntegrator
-from monitoring import MonitorMixtureIntSnippet, MonitorSingleIntSnippet
-from adaptation import DummyAdaptation, MixtureStepSizeAdaptorSA, SingleStepSizeAdaptorSA
-from integrator_snippets import MixtureIntegratorSnippetSameT, SingleIntegratorSnippet
-from utils import grad_neg_normal_log_kernel
+from integrator_snippets.manifolds import Ellipsoid
+from integrator_snippets.distributions import Filamentary
+from integrator_snippets.integrators import AMIntegrator, IntegratorMixtureSameT, LeapfrogIntegrator
+from integrator_snippets.monitoring import MonitorMixtureIntSnippet, MonitorSingleIntSnippet
+from integrator_snippets.adaptation import DummyAdaptation, MixtureStepSizeAdaptorSA, SingleStepSizeAdaptorSA
+from integrator_snippets.samplers import MixtureIntegratorSnippetSameT, SingleIntegratorSnippet
+from integrator_snippets.utils import grad_neg_normal_log_kernel
 import numpy.typing as npt
 
 
