@@ -63,7 +63,7 @@ class MonitorSingleIntSnippet(Monitor):
                 self.grab_metric = lambda: self.median_path_diversity
             case None:
                 self.grab_metric = lambda: np.inf
-        self.esjd = None
+        self.esjd_mean = None  # expected squared jump distance for the mean function
         self.ess_mubar = None
 
     def update_metrics(self, attributes: dict):
@@ -94,6 +94,12 @@ class MonitorSingleIntSnippet(Monitor):
         # Compute ESS for mu bar. This requires obtaining the folded weights from the unfolded ones
         logw_folded = logsumexp(attributes['logw'], axis=1) - np.log(T+1)
         self.ess_mubar = np.exp(2*logsumexp(logw_folded) - logsumexp(2*logw_folded))
+        # Compute ESJD for the first component of the mean
+        fnk_weighted = attributes['pos_nk'][:, :, 0]*np.exp(attributes['logw'])
+        differences = fnk_weighted[:, None, :] - fnk_weighted[:, :, None]
+        squared_differences = np.sum(differences ** 2, axis=0)
+        self.esjd_mean = np.triu(squared_differences, k=1).sum()
+        self.esjd_mean /= np.exp(2 * logsumexp(attributes['logw']))
 
     def terminate(self) -> bool:
         """Terminates if the metric is less than or equal to the terminal metric.
