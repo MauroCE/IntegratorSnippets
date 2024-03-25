@@ -383,5 +383,3 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
             'W': self.W,
             'n': self.n
         }
-
-

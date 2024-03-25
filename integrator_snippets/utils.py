@@ -114,4 +114,3 @@ def essl(logw: npt.NDArray[float]) -> float:
     :rtype: float
     """
     return np.exp(2*logsumexp(logw) - logsumexp(2*logw))
-
