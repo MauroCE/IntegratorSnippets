@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
-from scipy.stats import multivariate_normal as mvn
 from scipy.optimize import fsolve
+from scipy.stats import multivariate_normal as mvn
 
 
 class Manifold:

@@ -2,8 +2,8 @@ import numpy as np
 import numpy.typing as npt
 from typing import Optional
 from scipy.linalg import cho_factor, cho_solve
-from distributions import SequentialTargets, Filamentary
-from utils import project
+from .utils import project
+from .distributions import SequentialTargets, Filamentary
 
 
 class Integrator:

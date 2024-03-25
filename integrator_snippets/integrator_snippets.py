@@ -1,13 +1,13 @@
 import numpy as np
-from integrators import Integrator, IntegratorMixtureSameT
-from distributions import SequentialTargets
-from monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
-from typing import Optional
-from utils import setup_rng
-from adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
-import matplotlib.pyplot as plt
 from matplotlib import rc
+from typing import Optional
+import matplotlib.pyplot as plt
 from scipy.special import logsumexp
+from .utils import setup_rng
+from .distributions import SequentialTargets
+from .integrators import Integrator, IntegratorMixtureSameT
+from .monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
+from .adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
 
 
 class AbstractIntegratorSnippet:

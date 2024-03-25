@@ -1,8 +1,8 @@
 import numpy as np
-import numpy.typing as npt
-from utils import uniform_log_kernel, normal_log_kernel, essl
-from manifolds import Manifold
 import scipy as sp
+import numpy.typing as npt
+from .utils import uniform_log_kernel, normal_log_kernel, essl
+from .manifolds import Manifold
 
 
 class SequentialTargets:
