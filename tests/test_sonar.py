@@ -8,7 +8,7 @@ from integrator_snippets.samplers import SingleIntegratorSnippet
 
 
 def get_sonar_data():
-    raw_data = np.loadtxt("../sonar.all-data", delimiter=",", converters={60: lambda x: 1 if x == b"R" else 0})
+    raw_data = np.loadtxt("../data/sonar.all-data", delimiter=",", converters={60: lambda x: 1 if x == b"R" else 0})
     response = raw_data[:, -1]
     # Preprocess predictors
     predictors = np.atleast_2d(raw_data[:, :-1])
