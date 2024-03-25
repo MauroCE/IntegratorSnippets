@@ -40,7 +40,7 @@ class Manifold:
             self.project = self._qr_project
             self.distances = self._multivariate_distances_from_manifold
 
-    def f(self, xs: npt.NDArray[float]):
+    def f(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Vectorised constraint function. Computes constraint at each row of xs.
 
         Parameters
@@ -52,7 +52,7 @@ class Manifold:
         """
         raise NotImplementedError("Constraint function not implemented.")
 
-    def jac(self, xs: npt.NDArray[float]):
+    def jac(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Jacobian of the constraint evaluated at each row of xs. Returns a (N, m, n) tensor where N is the number of
         particles, m is the co-dimension of the manifold and n is the dimension of the ambient space. The number N is
         the length of the first dimension of the xs.
@@ -64,9 +64,9 @@ class Manifold:
         :return: Tensor where every slice in the first dimension is a Jacobian for the corresponding row of xs
         :rtype: np.ndarray
         """
-        NotImplementedError("Jacobian of the function not implemented.")
+        raise NotImplementedError("Jacobian of the function not implemented.")
 
-    def _qr_project(self, vs: npt.NDArray[float], xs: npt.NDArray[float]):
+    def _qr_project(self, vs: npt.NDArray[float], xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Same as `self._qr_project` but computes the projection for all particles at once. This should be used in an
         SMC sampler to vectorise computations.
 
@@ -86,7 +86,7 @@ class Manifold:
             np.einsum('ijk,ik->ij', np.transpose(qs, axes=(0, 2, 1)), vs)
         )
 
-    def _univariate_project(self, vs: npt.NDArray[float], xs: npt.NDArray[float]):
+    def _univariate_project(self, vs: npt.NDArray[float], xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Vectorised version of the univariate projection function.
 
         Parameters
@@ -102,7 +102,7 @@ class Manifold:
         gs_hat = gs / np.linalg.norm(gs, axis=1, keepdims=True)  # Normalize each row (gradient)
         return np.multiply(gs_hat, np.einsum('ij,ij->i', vs, gs_hat)[:, None])
 
-    def _univariate_distances_from_manifold(self, xs: npt.NDArray[float]):
+    def _univariate_distances_from_manifold(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Computes the maximum distance from the manifold of all particles in xs. This version is for m = 1.
 
         Parameters
@@ -112,9 +112,9 @@ class Manifold:
         :return: Distances of points from the manifold
         :rtype: np.ndarray
         """
-        return abs(self.f(xs))
+        return np.abs(self.f(xs))
 
-    def _multivariate_distances_from_manifold(self, xs: npt.NDArray[float]):
+    def _multivariate_distances_from_manifold(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
         """Same as `_univariate_distance_from_manifold` but to use when m > 1.
 
         Parameters
@@ -151,21 +151,41 @@ class Ellipsoid(Manifold):
         self.z = z
         self.mvn = mvn(mean=self.mu, cov=self.cov)
 
-    def f(self, xs: npt.NDArray[float]):
-        """Constraint function for ellipsoid. This is vectorised and expects a matrix input of shape (N, d)."""
+    def f(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Constraint function for ellipsoid. This is vectorised and expects a matrix input of shape (N, d).
+
+        Parameters
+        ----------
+        :param xs: Matrix whose rows are in the ambient space where we wish to evaluate the constraint function f
+        :type xs: np.NDArray
+        :return: Constraint function evaluated at each row of x, it's an array of shape (N, m)
+        :rtype: np.NDArray
+        """
         assert len(xs.shape) == 2, "Must be a matrix."
         return self.mvn.logpdf(xs).reshape(xs.shape[0], self.m) - np.log(self.z)
 
-    def jac(self, xs):
-        """Vectorised Jacobian. Works on an input of shape (N, d)."""
+    def jac(self, xs) -> npt.NDArray[float]:
+        """Vectorised Jacobian. Works on an input of shape (N, d).
+
+        Parameters
+        ----------
+        :param xs: Matrix whose rows are points in the ambient space at which we wish to compute the Jacobian
+        :type xs: np.ndarray
+        :return: Tensor where every slice in the first dimension is a Jacobian for the corresponding row of xs
+        :rtype: np.ndarray
+        """
         return - np.linalg.solve(self.cov, (xs - self.mu).T).T[:, np.newaxis, :]  # insert extra axis of size self.m=1
 
     def sample(self, N: int):
-        """Samples N points from the ellipsoid."""
-        # x = np.random.randn(N, self.d)
-        # x = x / np.linalg.norm(x, axis=1, keepdims=True)
-        # b = -2*np.log(self.z) - self.d*np.log(2*np.pi) - np.log(np.linalg.det(self.cov))
-        # return self.mu + b*np.linalg.cholesky(self.cov).dot(x.T).T
+        """Samples N points from the ellipsoid. Can be used for debugging.
+
+        Parameters
+        ----------
+        :param N: Number of points to sample
+        :type N: int
+        :return: Matrix of samples, shape (N, d)
+        :rtype: np.ndarray
+        """
         # find them by optimization
         samples = np.zeros((N, self.d))
         i = 0
