@@ -84,3 +84,25 @@ class LinearMixtureWeights(MixtureWeights):
         else:
             log_weights = - np.log(np.arange(1, self.T + 2))
         return log_weights - logsumexp(log_weights)
+
+
+class MHMixtureWeights(MixtureWeights):
+
+    def __init__(self, T: int):
+        super().__init__()
+        self.T = T
+
+    def log_weights(self) -> npt.NDArray[float]:
+        """Computes log weights based on current T.
+
+        Parameters
+        ----------
+        :return: Log of the weights for each mixture component
+        :rtype: np.ndarray
+        """
+        # Metropolis-Hastings-like weights, uniform probability to k=0 and k=T, but everything else to 0
+        log_weights = np.zeros(self.T + 1)
+        log_weights[[0, -1]] = -np.log(2)
+        return log_weights
+
+
