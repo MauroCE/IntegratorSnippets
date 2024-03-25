@@ -10,6 +10,13 @@ class MixtureWeights:
         pass
 
     def log_weights(self) -> npt.NDArray[float]:
+        """Log of the mixture weights.
+
+        Parameters
+        ----------
+        :return: Log of the weights for each mixture component
+        :rtype: np.ndarray
+        """
         raise NotImplementedError
 
     def update(self, attributes: dict):
@@ -36,7 +43,13 @@ class UniformMixtureWeights(MixtureWeights):
         self.T = T
 
     def log_weights(self) -> npt.NDArray[float]:
-        """Computes log weights based on current T."""
+        """Computes log weights based on current T.
+
+        Parameters
+        ----------
+        :return: Log of the weights for each mixture component
+        :rtype: np.ndarray
+        """
         return - np.log([self.T+1]*(self.T + 1))
 
 
@@ -59,7 +72,13 @@ class LinearMixtureWeights(MixtureWeights):
         self.increasing = increasing
 
     def log_weights(self) -> npt.NDArray[float]:
-        """Computes log weights based on current T."""
+        """Computes log weights based on current T.
+
+        Parameters
+        ----------
+        :return: Log of the weights for each mixture component
+        :rtype: np.ndarray
+        """
         if self.increasing:
             log_weights = - np.log(self.T - np.arange(self.T + 1) + 1)
         else:
