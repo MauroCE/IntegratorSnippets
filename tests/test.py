@@ -56,30 +56,33 @@ if __name__ == "__main__":
     out = ghums.sample()
 
     # Try the same but with HMC
-    # def neg_log_base_dens(x_matrix) -> npt.NDArray[float]:
-    #     """Base negative log density for N inputs."""
-    #     assert len(x_matrix.shape) == 2, "must be two dimensional input"
-    #     return 0.5 * (np.linalg.norm(x_matrix, axis=-1) ** 2)
-    # def grad_neg_log_base_dens(x_matrix):
-    #     """Gradient"""
-    #     return x_matrix
-    # def dVdq(x_matrix, eps):
-    #     return grad_neg_normal_log_kernel(x_matrix, eps, jac=manifold.jac, f=manifold.f) + grad_neg_log_base_dens(x_matrix)
-    # leapfrog = LeapfrogIntegrator(d=d, T=T, step_size=0.1, dVdq=dVdq)
-    # targets = Filamentary(manifold=manifold, eps=1000, kernel='normal', coeff=0.9)
-    # targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
-    # targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
-    # targets.log_dens_aux = thug.eval_aux_logdens
-    # monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
-    # adaptator = DummyAdaptation()
-    # int_snip = SingleIntegratorSnippet(
-    #     N=N,
-    #     integrator=leapfrog,
-    #     targets=targets,
-    #     monitor=monitor,
-    #     adaptator=adaptator,
-    #     max_iter=1000,
-    #     verbose=True,
-    #     plot_every=2
-    # )
-    # out_hmc = int_snip.sample()
+    def neg_log_base_dens(x_matrix) -> npt.NDArray[float]:
+        """Base negative log density for N inputs."""
+        assert len(x_matrix.shape) == 2, "must be two dimensional input"
+        return 0.5 * (np.linalg.norm(x_matrix, axis=-1) ** 2)
+
+    def grad_neg_log_base_dens(x_matrix):
+        """Gradient"""
+        return x_matrix
+
+    def dVdq(x_matrix, eps):
+        return grad_neg_normal_log_kernel(x_matrix, eps,
+                                          jac=manifold.jac, f=manifold.f) + grad_neg_log_base_dens(x_matrix)
+    leapfrog = LeapfrogIntegrator(d=d, T=T, step_size=0.1, dVdq=dVdq)
+    targets = Filamentary(manifold=manifold, eps=1000, kernel='normal', coeff=0.9)
+    targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
+    targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
+    targets.log_dens_aux = thug.eval_aux_logdens
+    monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+    adaptator = DummyAdaptation()
+    int_snip = SingleIntegratorSnippet(
+        N=N,
+        integrator=leapfrog,
+        targets=targets,
+        monitor=monitor,
+        adaptator=adaptator,
+        max_iter=1000,
+        verbose=True,
+        plot_every=2000
+    )
+    out_hmc = int_snip.sample()
