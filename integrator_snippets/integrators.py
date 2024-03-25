@@ -4,6 +4,7 @@ from typing import Optional
 from scipy.linalg import cho_factor, cho_solve
 from .utils import project
 from .distributions import SequentialTargets, Filamentary
+from .mixture_weights import MixtureWeights
 
 
 class Integrator:
