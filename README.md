@@ -3,6 +3,11 @@
 # Integrator Snippets
 Integrator Snippets are a novel class of algorithms to sample from a target distribution.
 
+## TO-DO
+1. Allow non-uniform mixture weights
+2. Implement tempered distributions with automatic tempering based on ESS
+3. Implement mixture of integrators with different $T_i$'s
+
 ## Structure
 
 ---
