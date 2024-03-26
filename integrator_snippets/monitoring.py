@@ -92,7 +92,7 @@ class MonitorSingleIntSnippet(Monitor):
         self.median_index_proportion = np.median(attributes['trajectory_indices']) / T
         self.median_path_diversity = np.sqrt(self.particle_diversity * self.median_index_proportion)
         # Compute ESS for mu bar. This requires obtaining the folded weights from the unfolded ones
-        logw_folded = logsumexp(attributes['logw'], axis=1) - np.log(T+1)
+        logw_folded = logsumexp(attributes['logw'] + attributes['mixture_weights'].log_weights(), axis=1)
         self.ess_mubar = np.exp(2*logsumexp(logw_folded) - logsumexp(2*logw_folded))
         # Compute ESJD for the first component of the mean
         fnk_weighted = attributes['pos_nk'][:, :, 0]*np.exp(attributes['logw'])
