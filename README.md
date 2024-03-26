@@ -3,10 +3,69 @@
 # Integrator Snippets
 Integrator Snippets are a novel class of algorithms to sample from a target distribution.
 
+## Examples
+A filamentary example requires only six components:
+1. `Manifold`: the manifold around which the targets are concentrated.
+2. `Integrator`: invertible function used to update particles.
+3. `FilamentaryDistribution`: sequence of targets, superclass of `SequentialTargets`.
+4. `Monitor`: monitors performance and termination.
+5. `Adaptator`: adapts parameters of the integrators.
+6. `MixtureWeights`: weights of the components of the mixture.
+```python
+from integrator_snippets.manifolds import Ellipsoid
+from integrator_snippets.distributions import Filamentary
+from integrator_snippets.integrators import AMIntegrator, IntegratorMixtureSameT
+from integrator_snippets.monitoring import MonitorMixtureIntSnippet, MonitorSingleIntSnippet
+from integrator_snippets.adaptation import DummyAdaptation, MixtureStepSizeAdaptorSA, SingleStepSizeAdaptorSA
+from integrator_snippets.samplers import MixtureIntegratorSnippetSameT
+from integrator_snippets.mixture_weights import UniformMixtureWeights
+import numpy as np
+
+# Settings
+T = 20  # number of integration steps
+thug_step_size = 0.1
+snug_step_size = 0.1
+
+# Manifold is an ellipsoid centered at the origin
+ellipsoid = Ellipsoid(mu=np.zeros(2), cov=np.diag([1, 0.1]), z=0.05)
+
+# Mixture of THUG and SNUG (80% of the times we use THUG)
+thug = AMIntegrator(d=2, T=T, step_size=thug_step_size, int_type='thug')
+snug = AMIntegrator(d=2, T=T, step_size=snug_step_size, int_type='snug')
+integrators = IntegratorMixtureSameT(thug, snug, mixture_probabilities=np.array([0.8, 0.2]))
+
+# Targets are filamentary distributions, using a uniform kernel
+targets = Filamentary(manifold=ellipsoid, eps=np.inf, kernel='uniform', coeff=1.0)
+targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
+targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, 2)
+targets.log_dens_aux = thug.eval_aux_logdens
+
+# Monitor each integrator separately, terminate based on 'pm' metric
+thug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+snug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
+
+# Adapt the step size of SNUG but keep the one of THUG fixed
+thug_adaptator = DummyAdaptation()
+snug_adaptator = SingleStepSizeAdaptorSA(
+  target_metric_value=0.5, metric='mip', max_step=10., min_step=0.000001, lr=0.5)
+adaptators = MixtureStepSizeAdaptorSA(thug_adaptator, snug_adaptator)
+
+# Mixture weights are uniform and are not learned
+mix_weights = UniformMixtureWeights(T=T)
+
+# Gibbs Hug Markov Snippet (GHUMS) sampler
+ghums = MixtureIntegratorSnippetSameT(
+  N=1000, int_mixture=integrators, targets=targets, monitors=monitors,
+  adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
+  verbose=True, plot_every=100)
+sampling_output = ghums.sample()
+```
+
+
 ## TO-DO
-1. Allow non-uniform mixture weights
-2. Implement tempered distributions with automatic tempering based on ESS
-3. Implement mixture of integrators with different $T_i$'s
+1. Implement tempered distributions with automatic tempering based on ESS
+2. Implement mixture of integrators with different $T_i$'s
 
 ## Structure
 

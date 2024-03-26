@@ -104,5 +104,3 @@ class MHMixtureWeights(MixtureWeights):
         log_weights = np.zeros(self.T + 1)
         log_weights[[0, -1]] = -np.log(2)
         return log_weights
-
-

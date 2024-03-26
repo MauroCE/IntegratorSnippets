@@ -8,16 +8,17 @@ from integrator_snippets.samplers import SingleIntegratorSnippet
 
 
 def get_sonar_data():
-    raw_data = np.loadtxt("../data/sonar.all-data", delimiter=",", converters={60: lambda x: 1 if x == b"R" else 0})
+    raw_data = np.loadtxt("../data/sonar.all-data",
+                          delimiter=",", converters={60: lambda x: 1 if x == b"R" else 0})
     response = raw_data[:, -1]
     # Preprocess predictors
     predictors = np.atleast_2d(raw_data[:, :-1])
     rescaled_predictors = 0.5 * (predictors - np.mean(predictors, axis=0)) / np.std(predictors, axis=0)
-    n, p = predictors.shape
-    out = np.empty((n, p + 1))
-    out[:, 0] = 1.0  # intercept
-    out[:, 1:] = rescaled_predictors
-    predictors = out
+    n, n_predictors = predictors.shape
+    output = np.empty((n, n_predictors + 1))
+    output[:, 0] = 1.0  # intercept
+    output[:, 1:] = rescaled_predictors
+    predictors = output
     return predictors, response
 
 
@@ -88,6 +89,3 @@ if __name__ == "__main__":
         N=N, integrator=leapfrog, targets=targets, monitor=monitor, adaptator=adaptator, verbose=True, plot_every=100
     )
     out = int_snip.sample()
-
-
-

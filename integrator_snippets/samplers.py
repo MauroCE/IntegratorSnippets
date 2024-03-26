@@ -395,3 +395,18 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
             'W': self.W,
             'n': self.n
         }
+
+
+class MixtureIntegratorSnippet(MixtureIntegratorSnippetSameT):
+
+    def __init__(self, N: int, int_mixture: IntegratorMixtureSameT, targets: SequentialTargets,
+                 monitors: MonitorMixtureIntSnippet,
+                 adaptators: MixtureStepSizeAdaptorSA,
+                 mixture_weights: MixtureWeights = UniformMixtureWeights(T=2),
+                 max_iter: int = 1000,
+                 seed: Optional[int] = None,
+                 verbose: bool = False,
+                 plot_every: int = 5):
+        """Implements a mixture of integrators, who can have different number of integration steps."""
+        super().__init__()
+        pass
