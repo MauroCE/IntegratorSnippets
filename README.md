@@ -11,7 +11,7 @@ $$
 where $\psi_k:\mathsf{Z}\to\mathsf{Z}$ are invertible transformations, and leverage the powerful yet simple idenitity
 
 $$
-\mathbb{E}_\bar{\mu}[f\circ\psi_k] = \mathbb{E}_\mu[f].
+\mathbb{E}_{\bar{\mu}}[f\circ\psi_k] = \mathbb{E}_{\mu}[f].
 $$
 
 
