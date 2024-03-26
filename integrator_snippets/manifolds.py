@@ -204,3 +204,52 @@ class Ellipsoid(Manifold):
 
     def __repr__(self):
         return "{}-dim Ellipsoid".format(self.dim)
+
+
+class GK(Manifold):
+
+    def __init__(self, y_star: npt.NDArray[float]):
+        """Manifold for the G-and-K distribution.
+
+        Parameters
+        ----------
+        :param y_star: Observed data, has shape (m, )
+        :type y_star: np.ndarray
+
+        """
+        super().__init__(d=4+len(y_star), m=len(y_star))
+        self.y_star = y_star
+
+    def f(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Computes the (vectorised) constraint function for the G-and-K manifold.
+
+        Parameters
+        ----------
+        :param xs: Matrix whose rows we wish to evaluate the constraint at
+        :type xs: npt.NDArray[float]
+        :return: Constraint function evaluated at each row of xs
+        :rtype: npt.NDArray[float]
+        """
+        # Parameters are (N, 1) dimensional
+        a = xs[:, :0]
+        b = xs[:, 1:2]
+        g = xs[:, 2:3]
+        k = xs[:, 3:4]
+        # Latents are (N, m) dimensional
+        z = xs[:, 4:]
+        return a + b*(1 + 0.8*np.tanh(g*z/2))*z*(1 + z**2)**k - self.y_star[None, :]  # (N, m)
+
+    def jac(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
+        """Jacobian of the constraint function.
+
+        Parameters
+        ----------
+        :param xs: Matrix whose rows are points in the ambient space at which we wish to compute the Jacobian
+        :type xs: npt.NDArray[float]
+        :return: Jacobian of the constraint function evaluated at each row of xs
+        :rtype: npt.NDArray[float]
+        """
+        pass
+
+    def __repr__(self):
+        return """GK Manifold with {} datapoints.""".format(self.m)
