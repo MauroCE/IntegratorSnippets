@@ -127,3 +127,35 @@ class MixtureStepSizeAdaptorSA:
             }
             adaptation_dict[ix] = self.adaptors[ix].adapt(filtered_attributes)
         return adaptation_dict
+
+
+class SingleStepSizeSATMinAdaptor(AdaptationStrategy):
+
+    def __init__(self, target_metric_value: float, metric: str = 'pm', lr: float = 0.5, min_step: float = 1e-30,
+                 max_step: float = 100.0):
+        super().__init__()
+        self.target_metric_value = target_metric_value
+        self.metric = metric
+        self.lr = lr
+        self.min_step = min_step
+        self.max_step = max_step
+        if metric == 'pm':
+            self.metric_key = "proportion_moved"
+        elif metric == 'mip':
+            self.metric_key = "median_index_proportion"
+        else:
+            self.metric_key = "median_path_diversity"
+
+    def adapt(self, attributes: dict) -> dict:
+        """Adapts the step size of the integrator using stochastic approximation and T based on the
+        median index proportion."""
+        # Stochastic Approximation
+        log_step = np.log(attributes['integrator'].__dict__['step_size'])
+        metric_value = attributes['monitor'].__dict__[self.metric_key]
+        return {
+            'step_size': np.clip(
+                np.exp(log_step + self.lr*(metric_value - self.target_metric_value)),
+                a_min=self.min_step,
+                a_max=self.max_step),
+            'T': np.max(attributes['k_resampled'])
+        }

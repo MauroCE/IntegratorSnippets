@@ -75,7 +75,6 @@ ghums = MixtureIntegratorSnippetSameT(
 sampling_output = ghums.sample()
 ```
 
-
 ## TO-DO
 1. Implement tempered distributions with automatic tempering based on ESS
 2. Implement mixture of integrators with different $T_i$'s
