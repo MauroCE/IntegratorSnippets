@@ -14,6 +14,7 @@ $$
 \bar{\mu}(f\circ \psi_k) = \mu(f),
 $$
 
+Integrator snippets are particle-based algorithms. We construct trajectories for each particles and then resample out of all these trajectory points.
 
 ## Examples
 A filamentary example requires only six components:
