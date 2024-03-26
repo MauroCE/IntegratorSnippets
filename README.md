@@ -103,4 +103,9 @@ Computes metrics such as the proportion of particles moved, the median index pro
 ### `adaptation.py`
 Classes to adapt parameters of integrators (both single and mixtures of integrators).
 
+---
+
+### `mixture_weights.py`
+Classes to define weights for the mixture $\bar{\mu}$. In the paper we mostly consider uniform weights $\omega_k = (T+1)^{-1}$, which corresponds to `UniformMixtureWeights`. However, more complicated options are available here and indeed we allow full user flexibility and allow the possibility of adaptation of these weights.
+Dependence of the mixture weights on the position, i.e. $\omega_k(z)$ has not yet been implemented.
 
