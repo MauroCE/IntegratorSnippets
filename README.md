@@ -114,6 +114,7 @@ Computes metrics such as the proportion of particles moved, the median index pro
 
 ### `adaptation.py`
 Classes to adapt parameters of integrators (both single and mixtures of integrators).
+It is possible to adapt both the step size and the number of integration steps, e.g. `SingleStepSizeSATMinAdaptor`.
 
 ---
 
