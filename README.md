@@ -8,10 +8,10 @@ $$
 \bar{\mu}(dz) = \sum_{k=0}^T \omega_k \mu^{\psi_k^{-1}}(dz),
 $$
 
-where $\psi_k:\mathsf{Z}\to\mathsf{Z}$ are invertible transformations, and leverage the powerful yet simple idenitity
+where $\psi_k:\mathsf{Z}\to\mathsf{Z}$ are invertible transformations, and leverage the powerful yet simple identity
 
 $$
-\mathbb{E}_{\bar{\mu}}[f\circ\psi_k] = \mathbb{E}_{\mu}[f].
+\bar{\mu}(f\circ \psi_k) = \mu(f),
 $$
 
 
