@@ -2,6 +2,18 @@
 
 # Integrator Snippets
 Integrator Snippets are a novel class of algorithms to sample from a target distribution.
+Suppose $\mu$ is a target distribution on $(\mathsf{Z}, \mathcal{Z})$ that we wish to sample from. Integrator Snippets construct a mixture
+
+$$
+\bar{\mu}(dz) = \sum_{k=0}^T \omega_k \mu^{\psi_k^{-1}}(dz),
+$$
+
+where $\psi_k:\mathsf{Z}\to\mathsf{Z}$ are invertible transformations, and leverage the powerful yet simple idenitity
+
+$$
+\mathbb{E}_\bar{\mu}[f\circ\psi_k] = \mathbb{E}_\mu[f].
+$$
+
 
 ## Examples
 A filamentary example requires only six components:
