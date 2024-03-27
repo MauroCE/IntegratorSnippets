@@ -400,7 +400,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
 
 def GHUMS(N: int, T: int, filamentary: Filamentary, p_thug: float = 0.8, thug_step: float = 1.0, snug_step: float = 0.1,
           metric_thug='mip', metric_snug='mip', target_metric_thug=1e-2, target_metric_snug=1e-2,
-          mixture_weights: str = 'uniform')
+          mixture_weights: str = 'uniform'):
     # Integrator
     thug = AMIntegrator(d=filamentary.manifold.d, T=T, step_size=thug_step, int_type='thug')
     snug = AMIntegrator(d=filamentary.manifold.d, T=T, step_size=snug_step, int_type='snug')
@@ -415,14 +415,15 @@ def GHUMS(N: int, T: int, filamentary: Filamentary, p_thug: float = 0.8, thug_st
     adaptators = MixtureStepSizeAdaptorSA(thug_adaptor, snug_adaptor)
     if mixture_weights == 'uniform':
         mix_weights = UniformMixtureWeights(T=T)
-    elif mixture_weights == 'linear_increasing':
-        mixture_weights = LinearMixtureWeights(T=T, increasing=True)
-    elif mixture_weights == 'linear_decreasing':
-        mixture_weights = LinearMixtureWeights(T=T, increasing=False)
+    if mixture_weights == 'linear_increasing':
+        mix_weights = LinearMixtureWeights(T=T, increasing=True)
     else:
-        raise ValueError("Mixture weights not recognised.")
+        mix_weights = LinearMixtureWeights(T=T, increasing=False)
 
-
+    ghums = MixtureIntegratorSnippetSameT(N=N, int_mixture=integrators, targets=filamentary, monitors=monitors,
+                                          adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
+                                          verbose=True, plot_every=100)
+    return ghums.sample()
 
 
     # # Target
