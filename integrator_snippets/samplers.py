@@ -410,9 +410,12 @@ class GHUMS:
         # Targets (Filamentary Distributions)
         targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
         targets.base_log_dens_x = lambda x: -0.5 * (np.linalg.norm(x, axis=-1) ** 2)
-        targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
+        targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, manifold.d)
         targets.log_dens_aux = thug.eval_aux_logdens
         # Monitors
+        thug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+        snug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+        monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
 
 
     # # Target
