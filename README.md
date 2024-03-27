@@ -1,5 +1,5 @@
 <p align="center">
-<img src="integrator_snippets.png" height="500" align="center">
+<img src="snippets_gif_new.gif" height="300">
 </p>
 
 # Integrator Snippets
@@ -17,10 +17,6 @@ $$
 $$
 
 Integrator snippets are particle-based algorithms. We construct trajectories for each particles and then resample out of all these trajectory points.
-
-<p align="center">
-<img src="snippets_gif_new.gif" height="300">
-</p>
 
 ## Examples
 A filamentary example requires only six components:

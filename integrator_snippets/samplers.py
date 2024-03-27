@@ -7,8 +7,8 @@ from .utils import setup_rng
 from .distributions import SequentialTargets, Filamentary
 from .integrators import Integrator, IntegratorMixtureSameT, AMIntegrator
 from .monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
-from .adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
-from .mixture_weights import MixtureWeights, UniformMixtureWeights
+from .adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA, DummyAdaptation
+from .mixture_weights import MixtureWeights, UniformMixtureWeights, LinearMixtureWeights
 from .manifolds import Manifold
 
 
@@ -398,24 +398,31 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         }
 
 
-class GHUMS:
+def GHUMS(N: int, T: int, filamentary: Filamentary, p_thug: float = 0.8, thug_step: float = 1.0, snug_step: float = 0.1,
+          metric_thug='mip', metric_snug='mip', target_metric_thug=1e-2, target_metric_snug=1e-2,
+          mixture_weights: str = 'uniform')
+    # Integrator
+    thug = AMIntegrator(d=filamentary.manifold.d, T=T, step_size=thug_step, int_type='thug')
+    snug = AMIntegrator(d=filamentary.manifold.d, T=T, step_size=snug_step, int_type='snug')
+    integrators = IntegratorMixtureSameT(thug, snug, mixture_probabilities=np.array([p_thug, 1-p_thug]))
+    # Monitors
+    thug_monitor = MonitorSingleIntSnippet(terminal_metric=target_metric_thug, metric=metric_thug)
+    snug_monitor = MonitorSingleIntSnippet(terminal_metric=target_metric_snug, metric=metric_snug)
+    monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
+    # Adaptation
+    thug_adaptor = DummyAdaptation()
+    snug_adaptor = SingleStepSizeAdaptorSA(target_metric_value=0.5, metric='mip', max_step=10., min_step=1e-6, lr=0.5)
+    adaptators = MixtureStepSizeAdaptorSA(thug_adaptor, snug_adaptor)
+    if mixture_weights == 'uniform':
+        mix_weights = UniformMixtureWeights(T=T)
+    elif mixture_weights == 'linear_increasing':
+        mixture_weights = LinearMixtureWeights(T=T, increasing=True)
+    elif mixture_weights == 'linear_decreasing':
+        mixture_weights = LinearMixtureWeights(T=T, increasing=False)
+    else:
+        raise ValueError("Mixture weights not recognised.")
 
-    def __init__(self, N: int, T: int, manifold: Manifold, p_thug: float = 0.8, thug_step: float = 1.0,
-                 snug_step: float = 0.1):
-        # Integrator
-        thug = AMIntegrator(d=manifold.d, T=T, step_size=thug_step, int_type='thug')
-        snug = AMIntegrator(d=manifold.d, T=T, step_size=snug_step, int_type='snug')
-        mix_probs = np.array([p_thug, 1 - p_thug])
-        integrators = IntegratorMixtureSameT(thug, snug, mixture_probabilities=mix_probs)
-        # Targets (Filamentary Distributions)
-        targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
-        targets.base_log_dens_x = lambda x: -0.5 * (np.linalg.norm(x, axis=-1) ** 2)
-        targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, manifold.d)
-        targets.log_dens_aux = thug.eval_aux_logdens
-        # Monitors
-        thug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
-        snug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
-        monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
+
 
 
     # # Target
