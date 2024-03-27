@@ -16,6 +16,8 @@ $$
 
 Integrator snippets are particle-based algorithms. We construct trajectories for each particles and then resample out of all these trajectory points.
 
+![gif](snippets_gif.gif)
+
 ## Examples
 A filamentary example requires only six components:
 1. `Manifold`: the manifold around which the targets are concentrated.

@@ -240,7 +240,7 @@ class GK(Manifold):
         return a + b*(1 + 0.8*np.tanh(g*z/2))*z*(1 + z**2)**k - self.y_star[None, :]  # (N, m)
 
     def jac(self, xs: npt.NDArray[float]) -> npt.NDArray[float]:
-        """Jacobian of the constraint function.
+        """Jacobian of the (vectorised) constraint function.
 
         Parameters
         ----------
@@ -249,6 +249,26 @@ class GK(Manifold):
         :return: Jacobian of the constraint function evaluated at each row of xs
         :rtype: npt.NDArray[float]
         """
+        N = ξ.shape[0]
+        m = ξ.shape[1] - 4
+        J = zeros((N, m, m + 4))
+        J[:, :, 0] = 1.  # Derivatives with respect to a
+        J[:, :, 1] = (1 + 0.8 * tanh(ξ[:, 2:3] * ξ[:, 4:] / 2)) * ξ[:, 4:] * (1 + ξ[:, 4:] ** 2) ** ξ[:,
+                                                                                                    3:4]  # with respect to b
+        J[:, :, 2] = ξ[:, 1:2] * 0.8 * ξ[:, 4:] * ((1 + ξ[:, 4:] ** 2) ** ξ[:, 3:4]) * (
+                    1 - tanh(ξ[:, 2:3] * ξ[:, 4:] / 2) ** 2) * ξ[:, 4:] / 2  # with respect to g
+        J[:, :, 3] = ξ[:, 1:2] * (1 + 0.8 * tanh(ξ[:, 2:3] * ξ[:, 4:] / 2)) * ξ[:, 4:] * log(1 + ξ[:, 4:] ** 2) * (
+                    (1 + ξ[:, 4:] ** 2) ** ξ[:, 3:4])  # with respect to k
+        np.einsum('ijj->ij', J[:, :, 4:])[...] = ξ[:, 1:2] * ((1 + ξ[:, 4:] ** 2) ** ξ[:, 3:4]) * (((1 + 0.8 * tanh(
+            ξ[:, 2:3] * ξ[:, 4:] / 2)) * (1 + (2 * ξ[:, 3:4] + 1) * (ξ[:, 4:] ** 2)) / (1 + ξ[:, 4:] ** 2)) + 0.8 * ξ[:,
+                                                                                                                    2:3] * ξ[
+                                                                                                                           :,
+                                                                                                                           4:] * (
+                                                                                                               1 - tanh(
+                                                                                                           ξ[:,
+                                                                                                           2:3] * ξ[:,
+                                                                                                                  4:] / 2) ** 2) / 2)
+        return J
         pass
 
     def __repr__(self):
