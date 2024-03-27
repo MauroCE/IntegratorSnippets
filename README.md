@@ -1,4 +1,4 @@
-![Integrator Snippets](integrator_snippets.png)
+<img src="integrator_snippets.png" height="500">
 
 # Integrator Snippets
 Integrator Snippets are a novel class of algorithms to sample from a target distribution.
@@ -16,7 +16,7 @@ $$
 
 Integrator snippets are particle-based algorithms. We construct trajectories for each particles and then resample out of all these trajectory points.
 
-![gif](snippets_gif.gif)
+<img src="snippets_gif.gif" height="300">
 
 ## Examples
 A filamentary example requires only six components:
