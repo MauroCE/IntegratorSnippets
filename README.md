@@ -19,7 +19,7 @@ $$
 Integrator snippets are particle-based algorithms. We construct trajectories for each particles and then resample out of all these trajectory points.
 
 <p align="center">
-<img src="snippets_gif.gif" height="300">
+<img src="snippets_gif_new.gif" height="300">
 </p>
 
 ## Examples

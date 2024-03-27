@@ -4,11 +4,12 @@ from typing import Optional
 import matplotlib.pyplot as plt
 from scipy.special import logsumexp
 from .utils import setup_rng
-from .distributions import SequentialTargets
-from .integrators import Integrator, IntegratorMixtureSameT
+from .distributions import SequentialTargets, Filamentary
+from .integrators import Integrator, IntegratorMixtureSameT, AMIntegrator
 from .monitoring import Monitor, MonitorSingleIntSnippet, MonitorMixtureIntSnippet
 from .adaptation import AdaptationStrategy, SingleStepSizeAdaptorSA, MixtureStepSizeAdaptorSA
 from .mixture_weights import MixtureWeights, UniformMixtureWeights
+from .manifolds import Manifold
 
 
 class AbstractIntegratorSnippet:
@@ -397,16 +398,45 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         }
 
 
-class MixtureIntegratorSnippet(MixtureIntegratorSnippetSameT):
+class GHUMS:
 
-    def __init__(self, N: int, int_mixture: IntegratorMixtureSameT, targets: SequentialTargets,
-                 monitors: MonitorMixtureIntSnippet,
-                 adaptators: MixtureStepSizeAdaptorSA,
-                 mixture_weights: MixtureWeights = UniformMixtureWeights(T=2),
-                 max_iter: int = 1000,
-                 seed: Optional[int] = None,
-                 verbose: bool = False,
-                 plot_every: int = 5):
-        """Implements a mixture of integrators, who can have different number of integration steps."""
-        super().__init__()
-        pass
+    def __init__(self, N: int, T: int, manifold: Manifold, p_thug: float = 0.8, thug_step: float = 1.0,
+                 snug_step: float = 0.1):
+        # Integrator
+        thug = AMIntegrator(d=manifold.d, T=T, step_size=thug_step, int_type='thug')
+        snug = AMIntegrator(d=manifold.d, T=T, step_size=snug_step, int_type='snug')
+        mix_probs = np.array([p_thug, 1 - p_thug])
+        integrators = IntegratorMixtureSameT(thug, snug, mixture_probabilities=mix_probs)
+        # Targets (Filamentary Distributions)
+        targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
+        targets.base_log_dens_x = lambda x: -0.5 * (np.linalg.norm(x, axis=-1) ** 2)
+        targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
+        targets.log_dens_aux = thug.eval_aux_logdens
+        # Monitors
+
+
+    # # Target
+    # targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
+    # targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
+    # targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
+    # targets.log_dens_aux = thug.eval_aux_logdens
+    #
+    # # Monitors
+    # thug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+    # snug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
+    # monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
+    #
+    # # Adaptors
+    # thug_adaptator = DummyAdaptation()
+    # snug_adaptator = SingleStepSizeAdaptorSA(target_metric_value=0.5, metric='mip',
+    #                                          max_step=10., min_step=0.000001, lr=0.5)
+    # adaptators = MixtureStepSizeAdaptorSA(thug_adaptator, snug_adaptator)
+    #
+    # # Mixture weights
+    # mix_weights = UniformMixtureWeights(T=T)
+    #
+    # # Integrator Snippet
+    # ghums = MixtureIntegratorSnippetSameT(N=N, int_mixture=integrators, targets=targets, monitors=monitors,
+    #                                       adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
+    #                                       verbose=True, plot_every=100)
+
