@@ -413,41 +413,8 @@ def GHUMS(N: int, T: int, filamentary: Filamentary, p_thug: float = 0.8, thug_st
     thug_adaptor = DummyAdaptation()
     snug_adaptor = SingleStepSizeAdaptorSA(target_metric_value=0.5, metric='mip', max_step=10., min_step=1e-6, lr=0.5)
     adaptators = MixtureStepSizeAdaptorSA(thug_adaptor, snug_adaptor)
-    if mixture_weights == 'uniform':
-        mix_weights = UniformMixtureWeights(T=T)
-    if mixture_weights == 'linear_increasing':
-        mix_weights = LinearMixtureWeights(T=T, increasing=True)
-    else:
-        mix_weights = LinearMixtureWeights(T=T, increasing=False)
-
-    ghums = MixtureIntegratorSnippetSameT(N=N, int_mixture=integrators, targets=filamentary, monitors=monitors,
-                                          adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
-                                          verbose=True, plot_every=100)
+    mix_weights = UniformMixtureWeights(T=T)
+    ghums = MixtureIntegratorSnippetSameT(
+        N=N, int_mixture=integrators, targets=filamentary, monitors=monitors, adaptators=adaptators,
+        mixture_weights=mix_weights, max_iter=5000, verbose=True, plot_every=100)
     return ghums.sample()
-
-
-    # # Target
-    # targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
-    # targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
-    # targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
-    # targets.log_dens_aux = thug.eval_aux_logdens
-    #
-    # # Monitors
-    # thug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
-    # snug_monitor = MonitorSingleIntSnippet(terminal_metric=1e-2, metric='pm')
-    # monitors = MonitorMixtureIntSnippet(thug_monitor, snug_monitor)
-    #
-    # # Adaptors
-    # thug_adaptator = DummyAdaptation()
-    # snug_adaptator = SingleStepSizeAdaptorSA(target_metric_value=0.5, metric='mip',
-    #                                          max_step=10., min_step=0.000001, lr=0.5)
-    # adaptators = MixtureStepSizeAdaptorSA(thug_adaptator, snug_adaptator)
-    #
-    # # Mixture weights
-    # mix_weights = UniformMixtureWeights(T=T)
-    #
-    # # Integrator Snippet
-    # ghums = MixtureIntegratorSnippetSameT(N=N, int_mixture=integrators, targets=targets, monitors=monitors,
-    #                                       adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
-    #                                       verbose=True, plot_every=100)
-

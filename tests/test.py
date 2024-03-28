@@ -4,7 +4,7 @@ from integrator_snippets.distributions import Filamentary
 from integrator_snippets.integrators import AMIntegrator, IntegratorMixtureSameT, LeapfrogIntegrator
 from integrator_snippets.monitoring import MonitorMixtureIntSnippet, MonitorSingleIntSnippet
 from integrator_snippets.adaptation import DummyAdaptation, MixtureStepSizeAdaptorSA, SingleStepSizeAdaptorSA
-from integrator_snippets.samplers import MixtureIntegratorSnippetSameT, SingleIntegratorSnippet
+from integrator_snippets.samplers import MixtureIntegratorSnippetSameT, SingleIntegratorSnippet, GHUMS
 from integrator_snippets.mixture_weights import UniformMixtureWeights
 from integrator_snippets.utils import grad_neg_normal_log_kernel
 import numpy.typing as npt
@@ -54,6 +54,17 @@ if __name__ == "__main__":
                                           adaptators=adaptators, mixture_weights=mix_weights, max_iter=5000,
                                           verbose=True, plot_every=100)
     out = ghums.sample()
+    ###
+    print(" "*50)
+    print(" "*50)
+    print(" - " *100)
+    targets = Filamentary(manifold=manifold, eps=1000, kernel='uniform', coeff=1.0)
+    targets.base_log_dens_x = lambda x: -0.5*(np.linalg.norm(x, axis=-1)**2)
+    targets.sample_initial_particles = lambda n_particles: np.random.randn(n_particles, d)
+    targets.log_dens_aux = thug.eval_aux_logdens
+    out = GHUMS(N=N, T=T, filamentary=targets, thug_step=0.1, snug_step=0.1, metric_thug='mip', metric_snug='mip', target_metric_thug=1e-2, target_metric_snug=1e-2,)
+
+
 
     # Try the same but with HMC
     def neg_log_base_dens(x_matrix) -> npt.NDArray[float]:
