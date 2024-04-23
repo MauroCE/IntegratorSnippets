@@ -3,7 +3,7 @@
 </p>
 
 # Integrator Snippets
-Integrator Snippets are a novel class of algorithms to sample from a target distribution.
+[Integrator Snippets](https://arxiv.org/abs/2404.13302) are a novel class of algorithms to sample from a target distribution.
 Suppose $\mu$ is a target distribution on $(\mathsf{Z}, \mathcal{Z})$ that we wish to sample from. Integrator Snippets construct a mixture
 
 $$
