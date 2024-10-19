@@ -196,6 +196,25 @@ class Filamentary(SequentialTargets):
         return log_num - log_den  # (N, T+1)
 
 
+class FilamentaryFixedTolSeq(Filamentary):
+
+    def __init__(self, manifold: Manifold, epsilons: npt.NDArray[float], kernel='uniform'):
+        """This class implements a sequence of filamentary distributions where the epsilons are predetermined and
+        given by the user. The key is to always know the index of the current iteration.
+        All methods utilize param_new and param_old. We just need to make sure that at any given moment, these
+        are the correct epsilons.
+        Initially both param_new and param_old are set to epsilons[0]. When we generate a new parameter, we need to
+        increase the counter"""
+        super().__init__(manifold=manifold, eps=float(epsilons[0]), kernel=kernel, eps_ter=float(epsilons[-1]))
+        self.epsilons = epsilons
+        self.n = 0
+
+    def generate_parameter(self, attributes: dict) -> float:
+        """Grabs the next tolerance from the fixed list."""
+        self.n += 1
+        return float(self.epsilons[self.n])
+
+
 class Tempered(SequentialTargets):
 
     def __init__(self, gamma: float, data: dict, alpha: float = 0.9, tol: float = 1e-8):

@@ -178,6 +178,8 @@ class Ellipsoid(Manifold):
 
     def sample(self, N: int):
         """Samples N points from the ellipsoid. Can be used for debugging.
+        Points are first sampled from a spherical gaussian, then projected back onto the unit sphere and
+        then rescaled to lie exactly on the correct ellipsoid.
 
         Parameters
         ----------
@@ -186,21 +188,15 @@ class Ellipsoid(Manifold):
         :return: Matrix of samples, shape (N, d)
         :rtype: np.ndarray
         """
-        # find them by optimization
-        samples = np.zeros((N, self.d))
-        i = 0
-        while i < N:
-            # sample a random point
-            x = self.mvn.rvs()
-            # use optimization to find a point such that f(x) = 0
-            root, _, ier, _ = fsolve(
-                func=lambda xx: [self.mvn.logpdf(xx) - np.log(self.z), 0.0],
-                x0=x,
-                full_output=True)
-            if ier == 1:
-                samples[i] = root
-                i += 1
-        return samples
+        # Sample from a multivariate normal
+        x = np.random.randn(N, self.d)
+        # Project onto the unit sphere
+        x /= np.linalg.norm(x, axis=1, keepdims=True)
+        # Compute scaling matrix
+        b = -2*np.log(self.z) - self.d*np.log(2*np.pi) - np.log(np.linalg.det(self.cov))
+        L = np.linalg.cholesky(b*self.cov)
+        # Rescale to lie on the ellipsoid
+        return self.mu + L.dot(x.T).T
 
     def __repr__(self):
         return "{}-dim Ellipsoid".format(self.dim)

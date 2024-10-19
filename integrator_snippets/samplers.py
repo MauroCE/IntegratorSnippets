@@ -186,7 +186,7 @@ class SingleIntegratorSnippet(AbstractIntegratorSnippet):
     def compute_metrics(self):
         """Computes metrics based on Monitor. This allows a lot of flexibility from the user or for debugging."""
         self.monitor.update_metrics(self.__dict__)
-        self.print("\tMetrics computed.")
+        self.print("\tMetrics computed. ESS: ", self.monitor.rel_ess)
 
     def adapt_parameters(self):
         """Adapts (hyper)parameters of the integrators based on the metrics computed by the monitor."""
@@ -239,6 +239,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
                  mixture_weights: MixtureWeights = UniformMixtureWeights(T=2),
                  max_iter: int = 1000,
                  seed: Optional[int] = None,
+                 rng: Optional[np.random.Generator] = None,
                  verbose: bool = False,
                  plot_every: int = 5):
         """
@@ -259,12 +260,16 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         :type max_iter: int
         :param seed: Random seed for reproducibility
         :type seed: int
+        :param rng: Random number generator for reproducibility. IF this is provided, don't provide a seed
+        :type rng: np.random.Generator
         :param verbose: Whether to print information during the sampling, can be used for debugging or monitoring
         :type verbose: bool
         :param plot_every: How often to plot the particles, can be used for debugging
         :type plot_every: int
         """
         super().__init__()
+        # if both seed and rng are not None, raise an error
+        assert (seed is None) or (rng is None), "At least one of `seed` or `rng` must be None."
         self.N = N
         self.T = int_mixture.T
         self.integrators = int_mixture
@@ -279,7 +284,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         self.indices = None
         self.trajectory_indices = None
         self.particle_indices = None
-        self.rng = setup_rng(seed=seed, rng=None)
+        self.rng = setup_rng(seed=seed, rng=rng)
         self.max_iter = max_iter
         self.monitors = monitors
         self.adaptators = adaptators
@@ -351,7 +356,7 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
         # integrator. Therefore, different monitors require knowing which particles are using which integrator to
         # compute the correct metrics.
         self.monitors.update_metrics(self.__dict__)
-        self.print("\tMetrics computed.")
+        self.print("\tMetrics computed. ESS: ", self.monitors.monitors[0].rel_ess)
 
     def adapt_parameters(self):
         """Adapts parameters of each integrator."""
@@ -370,21 +375,22 @@ class MixtureIntegratorSnippetSameT(AbstractIntegratorSnippet):
 
     def plot_particles(self):
         """Plots particles at `plot_every` iterations for debugging."""
-        if self.n % self.plot_every == 0:
-            rc('font', **{'family': 'STIXGeneral'})
-            with plt.style.context("dark_background"):
-                fig, ax = plt.subplots()
-                # plot some points showing the ellipse
-                ax.scatter(*self.pos.T, label="particles", s=5, c='lightblue', marker='o', ec='navy')
-                ax.grid(True, color='gainsboro')
-                ax.set_ylim([-3, 3])
-                ax.set_xlim([-3, 3])
-                ax.set_xlabel(r"$\mathregular{x_0}$", fontsize=20)
-                ax.set_ylabel(r"$\mathregular{x_1}$", fontsize=20)
-                ax.set_aspect('equal')
-                ax.legend()
-                ax.set_title("n = {}".format(self.n))
-                plt.show()
+        # if self.n % self.plot_every == 0:
+        #     rc('font', **{'family': 'STIXGeneral'})
+        #     with plt.style.context("dark_background"):
+        #         fig, ax = plt.subplots()
+        #         # plot some points showing the ellipse
+        #         ax.scatter(*self.pos.T, label="particles", s=5, c='lightblue', marker='o', ec='navy')
+        #         ax.grid(True, color='gainsboro')
+        #         ax.set_ylim([-3, 3])
+        #         ax.set_xlim([-3, 3])
+        #         ax.set_xlabel(r"$\mathregular{x_0}$", fontsize=20)
+        #         ax.set_ylabel(r"$\mathregular{x_1}$", fontsize=20)
+        #         ax.set_aspect('equal')
+        #         ax.legend()
+        #         ax.set_title("n = {}".format(self.n))
+        #         plt.show()
+        pass
 
     def output(self):
         """Defines the output of the integrator snippet."""

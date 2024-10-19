@@ -14,6 +14,7 @@ class Monitor:
         self.particle_diversity = 1.0
         self.median_index_proportion = 1.0
         self.median_path_diversity = 1.0
+        self.rel_ess = 1.0
 
     def update_metrics(self, attributes: dict):
         """Updates the metrics based on the attributes of the monitor, which will be in the attributes of the
@@ -65,6 +66,8 @@ class MonitorSingleIntSnippet(Monitor):
                 self.grab_metric = lambda: np.inf
         self.esjd_mean = None  # expected squared jump distance for the mean function
         self.ess_mubar = None
+        # Relative Effective Sample Size for unfolded algorithm
+        self.rel_ess = None
 
     def update_metrics(self, attributes: dict):
         """Updates and stores several metrics based on the attributes of the integrator snippets.
@@ -100,6 +103,11 @@ class MonitorSingleIntSnippet(Monitor):
         squared_differences = np.sum(differences ** 2, axis=0)
         self.esjd_mean = np.triu(squared_differences, k=1).sum()
         self.esjd_mean /= np.exp(2 * logsumexp(attributes['logw']))
+        # Compute relative ESS as discussed in the paper
+        logw = attributes['logw']
+        traj_bound = 2*np.exp(logsumexp(2*logsumexp(logw - logsumexp(logw), axis=1))) - (1/N)
+        endp_bound = 2*np.exp(logsumexp(2*logsumexp(logw[:, [0, -1]] - logsumexp(logw[:, [0, -1]]), axis=1))) - (1/N)
+        self.rel_ess = N*(endp_bound / traj_bound)
 
     def terminate(self) -> bool:
         """Terminates if the metric is less than or equal to the terminal metric.
@@ -123,6 +131,8 @@ class MonitorMixtureIntSnippet:
         :type monitors: Monitor
         """
         self.monitors = monitors
+        self.rel_ess_values = []
+        self.pms = {str(i): [] for i in range(len(monitors))}
 
     def update_metrics(self, attributes: dict):
         """Updates metrics for each monitor.
@@ -141,6 +151,9 @@ class MonitorMixtureIntSnippet:
             for key in keys:
                 filtered_attributes[key] = attributes[key][attributes['iotas'] == ix]
             self.monitors[ix].update_metrics(filtered_attributes)
+            self.pms[str(ix)].append(self.monitors[ix].proportion_moved)
+        # Do it only for the first one for now
+        self.rel_ess_values.append(self.monitors[0].rel_ess)
 
     def terminate(self) -> bool:
         """Terminates if any of its sub-monitors terminates.
